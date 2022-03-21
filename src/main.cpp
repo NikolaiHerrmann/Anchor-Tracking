@@ -1,7 +1,6 @@
-#include "tracker/tracker.hpp"
+#include "video/video.hpp"
 
 int main(int argc, char **argv)
 {
-    Tracker tracker;
-    tracker.run();
+    Video{}.run();
 }

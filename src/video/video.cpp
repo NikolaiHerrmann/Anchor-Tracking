@@ -20,21 +20,16 @@ void Video::run()
         if (!readStatus)
             throw "Frame read failed!\n";
 
-        initFrame();
+        d_tracker.initFrame();
 
-        // d_image.forEach(
-        //     [](cv::vec3b)
-        // )
+        d_image.forEach<Tracker::Pixel>(
+            [&](Tracker::Pixel &pixel, int const *pos)
+            {
+                d_tracker.perPixel(pixel, pos[1], pos[0]);
+            }
+        );
 
-        for (size_t row = 0; row < d_image.rows; ++row)
-        {
-            cv::Vec3b *pixel = d_image.ptr<cv::Vec3b>(row);
-
-            for (size_t col = 0; col < d_image.cols; ++col)
-                perPixel(col, row, pixel[col]);
-        }
-
-        perFrame();
+        d_tracker.perFrame(d_image);
 
         cv::imshow("", d_image);
 
