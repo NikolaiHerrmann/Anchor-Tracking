@@ -8,8 +8,6 @@
 
 class Video
 {
-    size_t d_width;
-    size_t d_height;
     cv::VideoCapture d_capture;
     cv::Mat d_image;
     Tracker d_tracker;
@@ -20,7 +18,7 @@ class Video
     };
 
     public:
-        explicit Video(size_t cameraIdx = 2, size_t width = 640, size_t height = 480);
+        explicit Video(size_t cameraIdx, size_t width = 640, size_t height = 480);
         void run();
 };
 

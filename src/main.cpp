@@ -2,5 +2,5 @@
 
 int main(int argc, char **argv)
 {
-    Video{}.run();
+    Video{0}.run();
 }

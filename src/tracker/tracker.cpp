@@ -1,7 +1,7 @@
 #include "tracker.hpp"
 #include <opencv2/opencv.hpp>
 
-void Tracker::initFrame()
+void Tracker::init()
 {
     d_count = 0;
     d_avgX = 0;
@@ -10,8 +10,8 @@ void Tracker::initFrame()
 
 void Tracker::perPixel(Pixel const &rgb, int x, int y)
 {
-    cv::Vec3b tc{255, 0, 0};
-    size_t dis = colorDistance(tc, rgb);
+    Pixel ts{255, 0, 0};
+    size_t dis = colorDistance(ts, rgb);
 
     if (dis < d_colorThreshold * d_colorThreshold)
     {
@@ -21,7 +21,7 @@ void Tracker::perPixel(Pixel const &rgb, int x, int y)
     }
 }
 
-void Tracker::perFrame(cv::Mat const &image)
+void Tracker::draw(cv::Mat &image)
 {
     if (d_count > 0)
     {

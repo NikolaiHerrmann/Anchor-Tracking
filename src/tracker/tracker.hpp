@@ -14,8 +14,8 @@ class Tracker
         typedef cv::Point3_<uint8_t> Pixel;
         
         void perPixel(Pixel const &pixel, int x, int y);
-        void initFrame();
-        void perFrame(cv::Mat const &image);
+        void init();
+        void draw(cv::Mat &image);
 
     private:
         size_t colorDistance(Pixel const &c1, Pixel const &c2);
