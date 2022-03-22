@@ -1,5 +1,7 @@
 #include "video.hpp"
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgproc/types_c.h>
 
 Video::Video(size_t cameraIdx, size_t width, size_t height)
 :
@@ -16,16 +18,7 @@ void Video::run()
         if (!d_capture.read(d_image))
             throw "Frame read failed!\n";
 
-        d_tracker.init();
-
-        d_image.forEach<Tracker::Pixel>(
-            [&](Tracker::Pixel &pixel, int const *pos)
-            {
-                d_tracker.perPixel(pixel, pos[1], pos[0]);
-            }
-        );
-
-        d_tracker.draw(d_image);
+        d_tracker.scan(d_image);
 
         cv::imshow("", d_image);
 

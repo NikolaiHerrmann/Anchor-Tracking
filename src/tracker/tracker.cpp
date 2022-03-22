@@ -1,38 +1,47 @@
 #include "tracker.hpp"
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <iostream>
 
-void Tracker::init()
+void Tracker::binarize(cv::Mat const &image)
 {
-    d_count = 0;
-    d_avgX = 0;
-    d_avgY = 0;
+    cv::cvtColor(image, d_image, cv::COLOR_BGR2GRAY);
+    cv::adaptiveThreshold(d_image, d_image, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 3, 12);
 }
 
-void Tracker::perPixel(Pixel const &rgb, int x, int y)
+void Tracker::findBlob(uint8_t intensity, int x, int y)
 {
-    Pixel ts{255, 0, 0};
-    size_t dis = colorDistance(ts, rgb);
+    if (intensity != 0)
+        return;
 
-    if (dis < d_colorThreshold * d_colorThreshold)
+    for (size_t i = 0; i < d_blobs.size(); ++i)
     {
-        d_avgX += x;
-        d_avgY += y;
-        d_count++;
+        if (d_blobs[i].inBound(x, y))
+        {
+            d_blobs[i].add(x, y);
+            return;
+        }
     }
+
+    d_blobs.push_back(Blob{x, y});
 }
 
-void Tracker::draw(cv::Mat &image)
+void Tracker::scan(cv::Mat &image)
 {
-    if (d_count > 0)
+    d_blobs.clear();
+
+    binarize(image);
+
+    for (int i = 0; i < d_image.rows; ++i)
     {
-        d_avgX /= d_count;
-        d_avgY /= d_count;
-        cv::Rect rec(d_avgX-25, d_avgY-25, 50, 50);
-        cv::rectangle(image, rec, cv::Scalar(0, 0, 255));
+        uint8_t* pixel = d_image.ptr<uint8_t>(i);
+        for (int j = 0; j < d_image.cols; ++j)
+            findBlob(pixel[j], j, i);
     }
-}
 
-size_t Tracker::colorDistance(Pixel const &c1, Pixel const &c2)
-{
-    return (c2.x - c1.x) * (c2.x - c1.x) + (c2.y - c1.y) * (c2.y - c1.y) + (c2.z - c1.z) * (c2.z - c1.z);
+    //image = d_image;
+
+    for (size_t i = 0; i < d_blobs.size(); ++i)
+        cv::rectangle(image, d_blobs[i].rectangle(), cv::Scalar(0, 0, 255));
+
 }

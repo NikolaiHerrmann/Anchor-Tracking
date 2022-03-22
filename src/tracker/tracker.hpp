@@ -2,23 +2,24 @@
 #define INCLUDED_TRACKER_H
 
 #include <opencv2/core/types.hpp>
+#include <opencv2/core.hpp>
+#include "../blob/blob.hpp"
+#include <vector>
 
 class Tracker
 {
-    int d_count;
-    size_t d_avgX;
-    size_t d_avgY;
-    size_t d_colorThreshold = 180;
+    cv::Mat d_image;
+    std::vector<Blob> d_blobs;
 
     public:
-        typedef cv::Point3_<uint8_t> Pixel;
+        typedef cv::Point3_<uint8_t> PixelRGB;
         
-        void perPixel(Pixel const &pixel, int x, int y);
-        void init();
-        void draw(cv::Mat &image);
+        
+        void scan(cv::Mat &image);
 
     private:
-        size_t colorDistance(Pixel const &c1, Pixel const &c2);
+        void binarize(cv::Mat const &image);
+        void findBlob(uint8_t intensity, int x, int y);
 };
 
 #endif
