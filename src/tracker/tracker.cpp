@@ -42,6 +42,9 @@ void Tracker::scan(cv::Mat &image)
     //image = d_image;
 
     for (size_t i = 0; i < d_blobs.size(); ++i)
-        cv::rectangle(image, d_blobs[i].rectangle(), cv::Scalar(0, 0, 255));
+    {
+        
+        d_blobs[i].draw(image);
+    }
 
 }
