@@ -3,12 +3,21 @@
 
 #include <opencv2/opencv.hpp>
 #include <cmath>
+#include <vector>
+#include <utility>
+#include <algorithm>
+
+#define max(a, b) a > b ? a : b
+#define min(a, b) a < b ? a : b
 
 class Blob
 {
     enum Threshold
     {
-        DISTANCE = 100
+        DISTANCE = 50,
+        BOX = 9,
+        WIDTH = 640,
+        HEIGHT = 480,
     };
 
     int const d_threshSq = DISTANCE * DISTANCE;
@@ -18,6 +27,15 @@ class Blob
     int d_maxX;
     int d_maxY;
     int d_id;
+
+    struct Point
+    {
+        int x;
+        int y;
+    };
+
+    static int *s_points;
+    static size_t s_maxID;
 
     public:
         Blob(int x, int y);
@@ -33,7 +51,15 @@ class Blob
 
         cv::Rect rectangle();
         void draw(cv::Mat &image);
+
+        static void clear();
 };
+
+inline void Blob::clear()
+{
+    std::fill(s_points, s_points + (WIDTH * HEIGHT), -1);
+    s_maxID = 0;
+}
 
 inline int Blob::cx()
 {
@@ -45,10 +71,7 @@ inline int Blob::cy()
     return (d_maxY + d_minY) >> 1;
 }
 
-inline bool Blob::inBound(int x, int y)
-{
-    return distanceSq(cx(), cy(), x, y) < d_threshSq;
-}
+
 
 inline int Blob::distanceSq(int x1, int y1, int x2, int y2)
 {

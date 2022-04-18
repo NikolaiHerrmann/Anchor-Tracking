@@ -42,6 +42,7 @@ void Tracker::findBlob(uint8_t intensity, int x, int y)
 void Tracker::scan(cv::Mat &image)
 {
     d_blobs.clear();
+    Blob::clear();
 
     binarize(image);
 
@@ -54,10 +55,10 @@ void Tracker::scan(cv::Mat &image)
 
     image = d_image;
 
-    // for (size_t i = 0; i < d_blobs.size(); ++i)
-    // {
+    for (size_t i = 0; i < d_blobs.size(); ++i)
+    {
         
-    //     d_blobs[i].draw(image);
-    // }
+        d_blobs[i].draw(image);
+    }
 
 }

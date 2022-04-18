@@ -10,16 +10,43 @@ Blob::Blob(int x, int y)
     d_minY(y),
     d_maxX(x),
     d_maxY(y),
-    d_id(rand())
+    d_id(s_maxID++)
 {
+    add(x, y);
 }
 
 void Blob::add(int x, int y)
 {
-    d_minX = std::min(d_minX, x);
-    d_minY = std::min(d_minY, y);
-    d_maxX = std::max(d_maxX, x);
-    d_maxY = std::max(d_maxY, y);
+    d_minX = min(d_minX, x);
+    d_minY = min(d_minY, y);
+    d_maxX = max(d_maxX, x);
+    d_maxY = max(d_maxY, y);
+
+    int offset = BOX / 2;
+    int yMinLimit = max(y - offset, 0);
+    int yMaxLimit = min(y + offset, HEIGHT);
+
+    int xMinLimit = max(x - offset, 0);
+    int xOffset = offset;
+    int mOffset = offset;
+
+    if (x + offset >= WIDTH)
+    {
+        xOffset = WIDTH - (x + offset);
+    }
+
+    xOffset += offset; // take proper y into consideration
+
+    int *points = s_points + (xMinLimit + (yMinLimit * WIDTH));
+
+    for (int i = yMinLimit; i != yMaxLimit; ++i, points += WIDTH)
+        std::fill(points, points + xOffset, d_id);
+}
+
+bool Blob::inBound(int x, int y)
+{
+    return s_points[x + (y * WIDTH)] == d_id;
+    //return distanceSq(cx(), cy(), x, y) < d_threshSq;
 }
 
 void Blob::color(cv::Mat &image)
