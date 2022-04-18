@@ -8,7 +8,7 @@ class Blob
 {
     enum Threshold
     {
-        DISTANCE = 70
+        DISTANCE = 100
     };
 
     int const d_threshSq = DISTANCE * DISTANCE;

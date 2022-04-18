@@ -9,6 +9,7 @@
 class Tracker
 {
     cv::Mat d_image;
+    cv::Mat d_prev;
     std::vector<Blob> d_blobs;
 
     public:
