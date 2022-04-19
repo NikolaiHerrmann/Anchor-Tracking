@@ -1,7 +1,6 @@
 #include "tracker.hpp"
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <iostream>
 
 void Tracker::binarize(cv::Mat const &image)
 {
@@ -20,6 +19,13 @@ void Tracker::binarize(cv::Mat const &image)
     
     cv::bitwise_and(d_image, d_prev, d_image);
     d_prev = cp.clone();
+
+    std::vector<std::vector<cv::Point>> contours;
+
+    cv::findContours(d_image, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+
+    for (size_t i = 0; i < contours.size(); ++i)
+        cv::drawContours(d_image, contours, i, cv::Scalar(0), 4);
 }
 
 void Tracker::findBlob(uint8_t intensity, int x, int y)
@@ -56,9 +62,5 @@ void Tracker::scan(cv::Mat &image)
     image = d_image;
 
     for (size_t i = 0; i < d_blobs.size(); ++i)
-    {
-        
         d_blobs[i].draw(image);
-    }
-
 }

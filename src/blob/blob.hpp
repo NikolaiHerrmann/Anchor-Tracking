@@ -28,12 +28,6 @@ class Blob
     int d_maxY;
     int d_id;
 
-    struct Point
-    {
-        int x;
-        int y;
-    };
-
     static int *s_points;
     static size_t s_maxID;
 

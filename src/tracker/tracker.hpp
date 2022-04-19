@@ -13,9 +13,6 @@ class Tracker
     std::vector<Blob> d_blobs;
 
     public:
-        typedef cv::Point3_<uint8_t> PixelRGB;
-        
-        
         void scan(cv::Mat &image);
 
     private:
