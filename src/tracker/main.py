@@ -2,101 +2,94 @@ import cv2
 import sys
 import numpy as np
 
-SCREEN_STD = "std"
 SCREEN_HSV = "hsv"
+SCREEN_MASK = "mask"
+SCREEN_BLOB = "blob"
+
 ESC = 27
-
-camera_idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-vid_cap = cv2.VideoCapture(camera_idx)
-
-light_orange = (1, 190, 200)
-dark_orange = (18, 255, 255)
-
-
-def mouse_click(event, x, y, flags, params):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        print(x, " ", y)
+RGB_RED = (0, 0, 255)
+RGB_WHITE = (255, 255, 255)
+LINE_THICKNESS = 2
+DIR_BUFFER_SIZE = 30
+ALPHA = 0.75
+BUFFER_CMP = 10
+CIRCLE_RADIUS = 4
 
 
-def thresh_callback(im, drawing):
-    #threshold = val
+lower_bound = (78, 104, 114)
+upper_bound = (83, 226, 239)
+
+
+def find_blob(mask, frame, dir_buffer, dir_buffer_idx):   
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    attributes = None
+    overlay_frame = frame.copy()
+
+    if len(contours) > 0:
+        max_contour = max(contours, key=cv2.contourArea)
+
+        # Bounding box
+        box_points = np.intp(cv2.boxPoints(cv2.minAreaRect(max_contour)))
+        cv2.drawContours(overlay_frame, [box_points], 0, RGB_WHITE, thickness=cv2.FILLED)
+        overlay_frame = cv2.addWeighted(overlay_frame, ALPHA, frame, 1 - ALPHA, 0)
+        cv2.drawContours(overlay_frame, [box_points], 0, RGB_RED, LINE_THICKNESS)
+
+        # 1. Position (center of bounding box)
+        moments = cv2.moments(max_contour)
+        cx = np.intp(moments['m10'] / moments['m00'])
+        cy = np.intp(moments['m01'] / moments['m00'])
+        cv2.circle(overlay_frame, (cx, cy), CIRCLE_RADIUS, RGB_RED, LINE_THICKNESS)
+
+        # 2. Direction Vector
+        dir_buffer[dir_buffer_idx] = (cx, cy)
+        dx = dir_buffer[dir_buffer_idx][0] - dir_buffer[dir_buffer_idx - BUFFER_CMP][0]
+        dy = dir_buffer[dir_buffer_idx][1] - dir_buffer[dir_buffer_idx - BUFFER_CMP][1]
+        cv2.arrowedLine(overlay_frame, (cx, cy), (cx + dx, cy + dy), RGB_RED, LINE_THICKNESS)
+
+        # 3. Area of bounding box
+        size = cv2.contourArea(max_contour)
+
+        attributes = ((cx, cy), (dx, dy), size)
     
-    #canny_output = cv2.Canny(src_gray, threshold, threshold * 2)
-    
-    
-    contours, hierarchy = cv2.findContours(im, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    
-    # Find the rotated rectangles and ellipses for each contour
-    minRect = [None]*len(contours)
-    minEllipse = [None]*len(contours)
-    for i, c in enumerate(contours):
-        minRect[i] = cv2.minAreaRect(c)
-        if c.shape[0] > 5:
-            minEllipse[i] = cv2.fitEllipse(c)
-    # Draw contours + rotated rects + ellipses
-    
-    #drawing = np.zeros((im.shape[0], im.shape[1], 3), dtype=np.uint8)
-    
-    for i, c in enumerate(contours):
-        # contour
-        #cv2.drawContours(drawing, contours, i, (0, 0, 255))
-        # ellipse
-        # if c.shape[0] > 5:
-        #     cv2.ellipse(drawing, minEllipse[i], color, 2)
-        # rotated rectangle
-        box = cv2.boxPoints(minRect[i])
-        box = np.intp(box) #np.intp: Integer used for indexing (same as C ssize_t; normally either int32 or int64)
-        cv2.drawContours(drawing, [box], 0, (0, 0, 255))
-    
-    
-    cv2.imshow('Contours', drawing)
+    return overlay_frame, attributes
 
 
-def track():
-    blob_param = cv2.SimpleBlobDetector_Params()
-    blob_param.filterByArea = True
-    blob_param.minArea = 1
-    #blob_param.maxArea = 100
-    blob_param.filterByColor = True
-    blob_param.blobColor = 255
-    blob_param.filterByConvexity = False
-    blob_param.filterByInertia = False
-    blob_param.minDistBetweenBlobs = 1
-    blob_param.filterByCircularity = False
-    # blob_param.filterByArea = True
-    # blob_param.minArea = 1000
-
-    blob_detector = cv2.SimpleBlobDetector_create(blob_param)
-
-    kernel = np.ones((5,5), np.uint8)
+def track(vid_cap):
+    kernel = np.ones((3,3), np.uint8)
+    dir_buffer = [(0, 0)] * DIR_BUFFER_SIZE
+    dir_buffer_idx = 0
 
     while True:
         ret, frame = vid_cap.read()
 
-        cv2.imshow(SCREEN_STD, frame)
-        cv2.setMouseCallback(SCREEN_STD, mouse_click)
-
-
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, light_orange, dark_orange)
-        
-        mask = cv2.dilate(mask, kernel, iterations=1)
+        cv2.imshow(SCREEN_HSV, hsv)
+
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+        mask = cv2.dilate(mask, kernel, iterations=2)
         mask = cv2.GaussianBlur(mask, (7, 7), 0)
 
-        cv2.imshow(SCREEN_HSV, mask)
-
-        # keypoints = blob_detector.detect(mask)
-        # blobs_mask = cv2.drawKeypoints(frame, keypoints, np.zeros((1, 1)), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        # cv2.imshow("", blobs_mask)
+        cv2.imshow("mask", mask)
 
 
-        thresh_callback(mask, frame)
+        new_frame, attributes = find_blob(mask, frame, dir_buffer, dir_buffer_idx)
+        cv2.imshow("b", new_frame)
+
+        if (attributes):
+            if dir_buffer_idx == DIR_BUFFER_SIZE - 1:
+                dir_buffer_idx = 0
+            else:
+                dir_buffer_idx += 1
 
         if cv2.waitKey(1) == ESC:
             break
 
 
 if __name__ == "__main__":
-    track()
+    camera_idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    vid_cap = cv2.VideoCapture(camera_idx)
+
+    track(vid_cap)
+
     cv2.destroyAllWindows()
     vid_cap.release()
