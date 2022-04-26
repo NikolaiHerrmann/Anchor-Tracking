@@ -25,4 +25,6 @@ void Video::run()
         if (cv::waitKey(10) == ESC)
             break;
     }
+
+    Blob::destroy();
 }

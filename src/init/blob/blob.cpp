@@ -10,7 +10,8 @@ Blob::Blob(int x, int y)
     d_minY(y),
     d_maxX(x),
     d_maxY(y),
-    d_id(s_maxID++)
+    d_id(s_maxID++),
+    d_count(0)
 {
     add(x, y);
 }
@@ -21,32 +22,39 @@ void Blob::add(int x, int y)
     d_minY = min(d_minY, y);
     d_maxX = max(d_maxX, x);
     d_maxY = max(d_maxY, y);
+    ++d_count;
 
     int offset = BOX / 2;
     int yMinLimit = max(y - offset, 0);
     int yMaxLimit = min(y + offset, HEIGHT);
 
     int xMinLimit = max(x - offset, 0);
-    int xOffset = offset;
-    int mOffset = offset;
+    int xMaxLimit = min(x + offset, WIDTH);
 
-    if (x + offset >= WIDTH)
-    {
-        xOffset = WIDTH - (x + offset);
-    }
-
-    xOffset += offset; // take proper y into consideration
+    int xDist = xMaxLimit - xMinLimit;
 
     int *points = s_points + (xMinLimit + (yMinLimit * WIDTH));
 
     for (int i = yMinLimit; i != yMaxLimit; ++i, points += WIDTH)
-        std::fill(points, points + xOffset, d_id);
+        std::fill(points, points + xDist, d_id);
+}
+
+void Blob::print()
+{
+    for (int i = 0; i < HEIGHT; ++i)
+    {
+        for (int j = 0; j < WIDTH; ++j)
+        {
+            std::cout << *(s_points + (j + (i * WIDTH))) << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n\n\n";
 }
 
 bool Blob::inBound(int x, int y)
 {
     return s_points[x + (y * WIDTH)] == d_id;
-    //return distanceSq(cx(), cy(), x, y) < d_threshSq;
 }
 
 void Blob::color(cv::Mat &image)
@@ -66,7 +74,7 @@ void Blob::draw(cv::Mat &image)
     // "p: (" + std::to_string(cx()) + ", " + std::to_string(cy()) + 
     //              ") s: " + std::to_string(size())
 
-    cv::putText(image, sstream.str(), 
-                cv::Point(d_minX, d_minY), cv::FONT_HERSHEY_COMPLEX_SMALL, 
-                0.5, cv::Scalar(255,255,255), 1, cv::LINE_AA);
+    // cv::putText(image, sstream.str(), 
+    //             cv::Point(d_minX, d_minY), cv::FONT_HERSHEY_COMPLEX_SMALL, 
+    //             0.5, cv::Scalar(255,255,255), 1, cv::LINE_AA);
 }
