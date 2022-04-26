@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 
+
 class Object:
 
     # Appearance
@@ -20,17 +21,17 @@ class Object:
     DILATE_KERNEL = np.ones((3, 3), np.uint8)
     BLUR_KERNEL_SIZE = (7, 7)
 
-    def __init__(self, hsv_low, hsv_high):
-        self.hsv_low = hsv_low
-        self.hsv_high = hsv_high
+    def __init__(self, track_color):
+        self.hsv_color = track_color.get_hsv_bounds()
         self.debug = False
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
+
         self.id = Object._ID
         Object._ID += 1
 
     def _filter_color(self, hsv_frame):
-        mask = cv2.inRange(hsv_frame, self.hsv_low, self.hsv_high)
+        mask = cv2.inRange(hsv_frame, self.hsv_color[0], self.hsv_color[1])
         mask = cv2.dilate(mask, Object.DILATE_KERNEL, iterations = 2)
         mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
 
@@ -55,7 +56,8 @@ class Object:
             cv2.drawContours(overlay_frame, [box_points], 0, Object.RGB_RED, Object.LINE_THICKNESS)
 
             # ID number
-            cv2.putText(overlay_frame, "ID: " + str(self.id), min(box_points, key = lambda x:x[1]), cv2.FONT_HERSHEY_PLAIN, 1.5, Object.RGB_WHITE)
+            text_coor = min(box_points, key = lambda x : x[1])
+            cv2.putText(overlay_frame, "ID: " + str(self.id), text_coor, cv2.FONT_HERSHEY_PLAIN, 1.5, Object.RGB_WHITE)
 
             # 1. Position (center of bounding box)
             moments = cv2.moments(max_contour)
@@ -66,10 +68,10 @@ class Object:
             # 2. Direction Vector
             self.dir_buffer[self.dir_buffer_idx] = (cx, cy)
             
-            dx = self.dir_buffer[self.dir_buffer_idx][0] - self.dir_buffer[self.dir_buffer_idx - self.BUFFER_CMP][0]
-            dy = self.dir_buffer[self.dir_buffer_idx][1] - self.dir_buffer[self.dir_buffer_idx - self.BUFFER_CMP][1]
+            dx = self.dir_buffer[self.dir_buffer_idx][0] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP][0]
+            dy = self.dir_buffer[self.dir_buffer_idx][1] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP][1]
             
-            if self.dir_buffer_idx == self.DIR_BUFFER_SIZE - 1:
+            if self.dir_buffer_idx == self.DIR_BUFFER_SIZE - 1: # ensure circular list indexing
                 self.dir_buffer_idx = 0
             else:
                 self.dir_buffer_idx += 1
@@ -79,10 +81,18 @@ class Object:
             # 3. Area of bounding box
             size = cv2.contourArea(max_contour)
 
-            attributes = (np.array([cx, cy]), Object.normalize(np.array([dx, dy])), size)
-        
-        return overlay_frame, attributes
+            vec = np.array([dx, dy])
 
-    def normalize(vec):
-        norm = np.linalg.norm(vec)
-        return vec if norm == 0 else vec / norm
+            self.position = np.array([cx, cy])
+            self.magnitude = np.linalg.norm(vec)
+            self.direction = vec if self.magnitude == 0 else vec / self.magnitude
+            self.size = 1
+
+        return overlay_frame
+
+    def compare(self, other):
+        pos_thresh = np.linalg.norm(self.position - other.position)
+        mag_thresh = 1
+        dir_thresh = self.direction.dot(other.direction)
+        size_thresh = 1
+        return (pos_thresh, mag_thresh, dir_thresh, size_thresh)

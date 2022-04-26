@@ -2,6 +2,7 @@
 import cv2
 import sys
 from object import Object
+from color import Color
 
 
 ESC = 27
@@ -9,15 +10,15 @@ ESC = 27
 
 def track(vid_cap):
 
-    blueObj = Object((90, 30, 244), (102, 150, 255))
-    greenObj = Object((78, 104, 114), (83, 226, 239))
+    blueObj = Object(Color.BLUE)
+    greenObj = Object(Color.GREEN)
 
     while True:
         _, frame = vid_cap.read()
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        new_frame, _ = blueObj.draw(hsv_frame, frame)
-        new_frame, attributes = greenObj.draw(hsv_frame, new_frame)
+        new_frame = blueObj.draw(hsv_frame, frame)
+        new_frame = greenObj.draw(hsv_frame, new_frame)
 
         cv2.imshow("objects", new_frame)
             
