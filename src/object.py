@@ -22,8 +22,9 @@ class Object:
     BLUR_KERNEL_SIZE = (7, 7)
 
     def __init__(self, track_color):
+        self.track_color = track_color
         self.hsv_color = track_color.get_hsv_bounds()
-        self.debug = False
+        self.debug = True
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
 
@@ -44,8 +45,10 @@ class Object:
         mask = self._filter_color(hsv_frame) 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         overlay_frame = frame.copy()
+        found = False
 
         if len(contours) > 0:
+            found = True
             max_contour = max(contours, key = cv2.contourArea)
 
             # Bounding box
@@ -85,9 +88,10 @@ class Object:
             self.area = cv2.contourArea(box_points)
             self.rotation = area_stats[2]
 
-            print(self.position, self.magnitude, self.direction, self.area, self.rotation)
+            if self.debug:
+                print(self.position, self.magnitude, self.direction, self.area, self.rotation)
 
-        return overlay_frame
+        return found, overlay_frame
 
     def compare(self, other):
         position_thresh = np.linalg.norm(self.position - other.position)
@@ -95,5 +99,8 @@ class Object:
         direction_thresh = self.direction.dot(other.direction)
         area_thresh = np.abs(self.area - other.area)
         rotation_thresh = np.abs(self.rotation - other.rotation)
-        
+
         return (position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh)
+
+    def compare_truth(self, other):
+        return self.track_color == other.track_color

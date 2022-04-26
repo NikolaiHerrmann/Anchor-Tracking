@@ -3,12 +3,20 @@ import cv2
 import sys
 from object import Object
 from color import Color
+from anchor import Anchor
 
 
 ESC = 27
+SCREEN_MAIN = "objects"
 
 
 def track(vid_cap):
+
+    objects = []
+    for color in Color:
+        objects.append(Object(color))
+
+    anchor = Anchor()
 
     blueObj = Object(Color.BLUE)
     greenObj = Object(Color.GREEN)
@@ -17,12 +25,16 @@ def track(vid_cap):
         _, frame = vid_cap.read()
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        new_frame = greenObj.draw(hsv_frame, frame)
+        found, new_frame = greenObj.draw(hsv_frame, frame)
         #new_frame = blueObj.draw(hsv_frame, new_frame)
 
-        cv2.imshow("objects", new_frame)
+        if found:
+            anchor.match_generate_data(greenObj)
+
+        cv2.imshow(SCREEN_MAIN, new_frame)
             
         if cv2.waitKey(1) == ESC:
+            anchor.save_data()
             break
 
 
