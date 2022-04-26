@@ -16,11 +16,14 @@ BUFFER_CMP = 10
 CIRCLE_RADIUS = 4
 
 
-lower_bound = (78, 104, 114)
-upper_bound = (83, 226, 239)
+# lower_bound = (78, 104, 114)
+# upper_bound = (83, 226, 239)
+
+lower_bound = (90, 30, 244)
+upper_bound = (102, 150, 255)
 
 
-def find_blob(mask, frame, dir_buffer, dir_buffer_idx):   
+def draw(mask, frame, dir_buffer, dir_buffer_idx):   
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     attributes = None
     overlay_frame = frame.copy()
@@ -33,6 +36,9 @@ def find_blob(mask, frame, dir_buffer, dir_buffer_idx):
         cv2.drawContours(overlay_frame, [box_points], 0, RGB_WHITE, thickness=cv2.FILLED)
         overlay_frame = cv2.addWeighted(overlay_frame, ALPHA, frame, 1 - ALPHA, 0)
         cv2.drawContours(overlay_frame, [box_points], 0, RGB_RED, LINE_THICKNESS)
+
+        # ID number
+        cv2.putText(overlay_frame, "ID: 3", min(box_points, key = lambda x:x[1]), cv2.FONT_HERSHEY_PLAIN, 1.5, RGB_WHITE)
 
         # 1. Position (center of bounding box)
         moments = cv2.moments(max_contour)
@@ -72,7 +78,7 @@ def track(vid_cap):
         cv2.imshow("mask", mask)
 
 
-        new_frame, attributes = find_blob(mask, frame, dir_buffer, dir_buffer_idx)
+        new_frame, attributes = draw(mask, frame, dir_buffer, dir_buffer_idx)
         cv2.imshow("b", new_frame)
 
         if (attributes):
