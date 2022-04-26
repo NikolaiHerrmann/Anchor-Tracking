@@ -17,8 +17,8 @@ def track(vid_cap):
         _, frame = vid_cap.read()
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        new_frame = blueObj.draw(hsv_frame, frame)
-        new_frame = greenObj.draw(hsv_frame, new_frame)
+        new_frame = greenObj.draw(hsv_frame, frame)
+        #new_frame = blueObj.draw(hsv_frame, new_frame)
 
         cv2.imshow("objects", new_frame)
             
