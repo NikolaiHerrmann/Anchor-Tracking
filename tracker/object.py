@@ -11,14 +11,13 @@ class Object:
     LINE_THICKNESS = 2
     ALPHA = 0.75
     CIRCLE_RADIUS = 4
-
-    # Settings
-    DIR_BUFFER_SIZE = 30
-    _ID = 1
+    TEXT_SCALE = 1.5  
 
     # Param
+    DIR_BUFFER_SIZE = 30
     BUFFER_CMP_DIS = 10
-    DILATE_KERNEL = np.ones((3, 3), np.uint8)
+    DILATE_KERNEL_SIZE = (3, 3)
+    DILATE_ITER = 2
     BLUR_KERNEL_SIZE = (7, 7)
 
     def __init__(self, color):
@@ -28,12 +27,9 @@ class Object:
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
 
-        self.id = Object._ID
-        Object._ID += 1
-
     def _filter_color(self, hsv_frame):
         mask = cv2.inRange(hsv_frame, self.hsv_color[0], self.hsv_color[1])
-        mask = cv2.dilate(mask, Object.DILATE_KERNEL, iterations = 2)
+        mask = cv2.dilate(mask, np.ones(Object.DILATE_KERNEL_SIZE, np.uint8), iterations = Object.DILATE_ITER)
         mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
 
         # if self.debug:
@@ -60,7 +56,8 @@ class Object:
 
             # ID number
             text_coor = min(box_points, key = lambda x : x[1])
-            cv2.putText(overlay_frame, "ID: " + str(self.id), text_coor, cv2.FONT_HERSHEY_PLAIN, 1.5, Object.RGB_WHITE)
+            text = "ID: " + str(self.color.value)
+            cv2.putText(overlay_frame, text, text_coor, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, Object.RGB_WHITE)
 
             # Position (center of bounding box)
             cx = np.intp(area_stats[0][0])

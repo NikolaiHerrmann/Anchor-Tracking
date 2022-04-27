@@ -35,8 +35,6 @@ def track(vid_cap):
         if found2:
             anchor.match_generate_data(blueObj)
 
-        anchor.data.append("------------")
-
         cv2.imshow(SCREEN_MAIN, new_frame)
             
         if cv2.waitKey(1) == ESC:
