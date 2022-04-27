@@ -25,7 +25,7 @@ scaler.fit(x_train)
 x_train = scaler.transform(x_train)
 x_test = scaler.transform(x_test)
 
-print(x_train)
+print(y_train)
 
 range_k = range(1, 15)
 scores = {}

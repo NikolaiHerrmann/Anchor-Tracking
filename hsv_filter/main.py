@@ -3,64 +3,45 @@ import cv2
 import sys
 import numpy as np
 
-SCREEN_MAIN = "Thresholds"
+SCREEN_MAIN = "Filter HSV Bounds"
+ESC = 27
+EXIT_DELAY = 1
 
+VALUES = {'H min': 179, 'S min': 255, 'V min': 255,
+          'H max': 179, 'S max': 255, 'V max': 255}
 
-def nothing(x):
-    pass
+if __name__ == "__main__":
+    camera_idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    vid_cap = cv2.VideoCapture(camera_idx)
 
+    cv2.namedWindow(SCREEN_MAIN)
 
-cv2.namedWindow(SCREEN_MAIN)
+    for key, value in VALUES.items():
+        cv2.createTrackbar(key, SCREEN_MAIN, 0, value, lambda x: x)
+        if "max" in key:
+            cv2.setTrackbarPos(key, SCREEN_MAIN, value)
 
-cv2.createTrackbar('HMin', SCREEN_MAIN, 0, 179, nothing)
-cv2.createTrackbar('SMin', SCREEN_MAIN, 0, 255, nothing)
-cv2.createTrackbar('VMin', SCREEN_MAIN, 0, 255, nothing)
-cv2.createTrackbar('HMax', SCREEN_MAIN, 0, 179, nothing)
-cv2.createTrackbar('SMax', SCREEN_MAIN, 0, 255, nothing)
-cv2.createTrackbar('VMax', SCREEN_MAIN, 0, 255, nothing)
+    values = np.zeros(6, dtype=np.uint8)
+    main_values = np.zeros(6, dtype=np.uint8)
 
-# Set default value for MAX HSV trackbars.
-cv2.setTrackbarPos('HMax', SCREEN_MAIN, 179)
-cv2.setTrackbarPos('SMax', SCREEN_MAIN, 255)
-cv2.setTrackbarPos('VMax', SCREEN_MAIN, 255)
+    while True:
+        _, frame = vid_cap.read()
 
-# Initialize to check if HSV min/max value changes
-hMin = sMin = vMin = hMax = sMax = vMax = 0
-phMin = psMin = pvMin = phMax = psMax = pvMax = 0
+        for idx, key in enumerate(VALUES.keys()):
+            values[idx] = cv2.getTrackbarPos(key, SCREEN_MAIN)
 
-camera_idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-vid_cap = cv2.VideoCapture(camera_idx)
-waitTime = 33
+        if not np.array_equal(values, main_values):
+            main_values = values.copy()
+            print(main_values)
 
-while True:
+        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv_frame, values[0:3], values[3:6])
+        frame = cv2.bitwise_and(frame, frame, mask=mask)
 
-    _, frame = vid_cap.read()
+        cv2.imshow(SCREEN_MAIN, frame)
 
-    # get current positions of all trackbars
-    hMin = cv2.getTrackbarPos('HMin', SCREEN_MAIN)
-    sMin = cv2.getTrackbarPos('SMin', SCREEN_MAIN)
-    vMin = cv2.getTrackbarPos('VMin', SCREEN_MAIN)
+        if cv2.waitKey(EXIT_DELAY) == ESC:
+            break
 
-    cv2.setTrackbarMax('HMin', SCREEN_MAIN, 12)
-
-    hMax = cv2.getTrackbarPos('HMax', SCREEN_MAIN)
-    sMax = cv2.getTrackbarPos('SMax', SCREEN_MAIN)
-    vMax = cv2.getTrackbarPos('VMax', SCREEN_MAIN)
-
-    # Set minimum and max HSV values to display
-    lower = np.array([hMin, sMin, vMin])
-    upper = np.array([hMax, sMax, vMax])
-
-    # Create HSV Image and threshold into a range.
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, lower, upper)
-    output = cv2.bitwise_and(frame, frame, mask=mask)
-
-    # Display output image
-    cv2.imshow(SCREEN_MAIN, output)
-
-    if cv2.waitKey(1) == 27:
-        break
-
-cv2.destroyAllWindows()
-vid_cap.release()
+    cv2.destroyAllWindows()
+    vid_cap.release()
