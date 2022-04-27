@@ -30,65 +30,59 @@ class Object:
     def _filter_color(self, hsv_frame):
         mask = cv2.inRange(hsv_frame, self.hsv_color[0], self.hsv_color[1])
         mask = cv2.dilate(mask, np.ones(Object.DILATE_KERNEL_SIZE, np.uint8), iterations = Object.DILATE_ITER)
-        mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
-
-        # if self.debug:
-        #     cv2.imshow("Mask " + str(self.id), mask)
-        
+        mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)        
         return mask
 
     def draw(self, hsv_frame, frame):  
         mask = self._filter_color(hsv_frame) 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        
+        if len(contours) < 1:
+            return False, frame
+        
         overlay_frame = frame.copy()
-        found = False
 
-        if len(contours) > 0:
-            found = True
-            max_contour = max(contours, key = cv2.contourArea)
+        max_contour = max(contours, key = cv2.contourArea)
 
-            # Bounding box
-            area_stats = cv2.minAreaRect(max_contour)
-            box_points = np.intp(cv2.boxPoints(area_stats))
-            cv2.drawContours(overlay_frame, [box_points], 0, Object.RGB_WHITE, thickness = cv2.FILLED)
-            overlay_frame = cv2.addWeighted(overlay_frame, Object.ALPHA, frame, 1 - Object.ALPHA, 0)
-            cv2.drawContours(overlay_frame, [box_points], 0, Object.RGB_RED, Object.LINE_THICKNESS)
+        # Bounding box
+        area_stats = cv2.minAreaRect(max_contour)
+        box_points = np.intp(cv2.boxPoints(area_stats))
+        cv2.drawContours(overlay_frame, [box_points], 0, Object.RGB_WHITE, thickness = cv2.FILLED)
+        overlay_frame = cv2.addWeighted(overlay_frame, Object.ALPHA, frame, 1 - Object.ALPHA, 0)
+        cv2.drawContours(overlay_frame, [box_points], 0, Object.RGB_RED, Object.LINE_THICKNESS)
 
-            # ID number
-            text_coor = min(box_points, key = lambda x : x[1])
-            text = "ID: " + str(self.color.value)
-            cv2.putText(overlay_frame, text, text_coor, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, Object.RGB_WHITE)
+        # ID number
+        text_coor = min(box_points, key = lambda x : x[1])
+        text = "ID: " + str(self.color.value)
+        cv2.putText(overlay_frame, text, text_coor, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, Object.RGB_WHITE)
 
-            # Position (center of bounding box)
-            cx = np.intp(area_stats[0][0])
-            cy = np.intp(area_stats[0][1])
-            cv2.circle(overlay_frame, (cx, cy), Object.CIRCLE_RADIUS, Object.RGB_RED, Object.LINE_THICKNESS)
+        # Position (center of bounding box)
+        cx = np.intp(area_stats[0][0])
+        cy = np.intp(area_stats[0][1])
+        cv2.circle(overlay_frame, (cx, cy), Object.CIRCLE_RADIUS, Object.RGB_RED, Object.LINE_THICKNESS)
 
-            # Direction Vector
-            self.dir_buffer[self.dir_buffer_idx] = (cx, cy)
-            
-            dx = self.dir_buffer[self.dir_buffer_idx][0] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][0]
-            dy = self.dir_buffer[self.dir_buffer_idx][1] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][1]
-            
-            if self.dir_buffer_idx == self.DIR_BUFFER_SIZE - 1: # ensure circular list indexing
-                self.dir_buffer_idx = 0
-            else:
-                self.dir_buffer_idx += 1
-            
-            cv2.arrowedLine(overlay_frame, (cx, cy), (cx + dx, cy + dy), Object.RGB_RED, Object.LINE_THICKNESS)
+        # Direction Vector
+        self.dir_buffer[self.dir_buffer_idx] = (cx, cy)
+        
+        dx = self.dir_buffer[self.dir_buffer_idx][0] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][0]
+        dy = self.dir_buffer[self.dir_buffer_idx][1] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][1]
+        
+        if self.dir_buffer_idx == self.DIR_BUFFER_SIZE - 1: # ensure circular list indexing
+            self.dir_buffer_idx = 0
+        else:
+            self.dir_buffer_idx += 1
+        
+        cv2.arrowedLine(overlay_frame, (cx, cy), (cx + dx, cy + dy), Object.RGB_RED, Object.LINE_THICKNESS)
 
-            dir_vec = np.array([dx, dy])
+        dir_vec = np.array([dx, dy])
 
-            self.position = np.array([cx, cy])
-            self.magnitude = np.linalg.norm(dir_vec)
-            self.direction = dir_vec if self.magnitude == 0 else dir_vec / self.magnitude
-            self.area = cv2.contourArea(box_points)
-            self.rotation = area_stats[2]
+        self.position = np.array([cx, cy])
+        self.magnitude = np.linalg.norm(dir_vec)
+        self.direction = dir_vec if self.magnitude == 0 else dir_vec / self.magnitude
+        self.area = cv2.contourArea(box_points)
+        self.rotation = area_stats[2]
 
-            # if self.debug:
-            #     print(self.position, self.magnitude, self.direction, self.area, self.rotation)
-
-        return found, overlay_frame
+        return True, overlay_frame
 
     def get_thresholds(self, attributes):
         position_thresh = np.linalg.norm(self.position - attributes[0])
@@ -96,8 +90,9 @@ class Object:
         direction_thresh = self.direction.dot(attributes[2])
         area_thresh = np.abs(self.area - attributes[3])
         rotation_thresh = np.abs(self.rotation - attributes[4])
-        same_color = 1 if self.color == attributes[5] else 0
 
+        same_color = 1 if self.color == attributes[5] else 0
+        
         return (position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh, same_color)
 
     def get_attributes(self):

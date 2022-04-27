@@ -7,13 +7,13 @@ class Color(Enum):
     
     GREEN = 0
     BLUE = 1
-    RED = 2
-    YELLOW = 3
-    ORANGE = 4
-    WHITE = 5
-    BLACK = 6
-    PURPLE = 7
-    BROWN = 8
+    # RED = 2
+    # YELLOW = 3
+    # ORANGE = 4
+    # WHITE = 5
+    # BLACK = 6
+    # PURPLE = 7
+    # BROWN = 8
 
     def get_hsv_bounds(self):
         return Color._lookup.get(self)
