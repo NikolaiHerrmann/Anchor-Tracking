@@ -23,7 +23,7 @@ class Anchor:
         with open(os.path.join(path, model_name + ext), "rb") as f:
             self.model = joblib.load(f)
 
-    def match_generate_data(self, obj):
+    def match(self, obj):
         for anchor_attributes in self.anchors:
             if not anchor_attributes:
                 continue

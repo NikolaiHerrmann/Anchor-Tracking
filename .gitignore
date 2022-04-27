@@ -1,8 +1,13 @@
 __pycache__/
 *.pyc
+
 .vscode/
+
 build*
 test*
 
 data/
 model/
+
+*.avi
+*.mp4
