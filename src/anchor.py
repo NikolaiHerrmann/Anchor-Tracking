@@ -8,26 +8,18 @@ class Anchor:
         self.data = []
 
     def match_generate_data(self, obj):
-        anchored = False
-
-        for anchor in self.anchors:
-            if not anchor:
+        
+        for anchor_attributes in self.anchors:
+            if not anchor_attributes:
                 continue
             
-            thresholds = obj.compare(anchor)
-            match = obj.compare_truth(anchor)
-            if match:
-                anchored = True
+            thresholds = obj.get_thresholds(anchor_attributes)
 
-            thresholds.append(1 if match else 0)
             self.data.append(thresholds)
-
-            # save data
 
             ## possibly remove anchor if old
 
-        if not anchored:
-            self.anchors[obj.color.value] = obj
+        self.anchors[obj.color.value] = obj.get_attributes()
 
     def match_ml(self):
         pass

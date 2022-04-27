@@ -27,10 +27,15 @@ def track(vid_cap):
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         found, new_frame = greenObj.draw(hsv_frame, frame)
-        #new_frame = blueObj.draw(hsv_frame, new_frame)
+        found2, new_frame = blueObj.draw(hsv_frame, new_frame)
 
         if found:
             anchor.match_generate_data(greenObj)
+
+        if found2:
+            anchor.match_generate_data(blueObj)
+
+        anchor.data.append("------------")
 
         cv2.imshow(SCREEN_MAIN, new_frame)
             

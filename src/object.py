@@ -93,14 +93,15 @@ class Object:
 
         return found, overlay_frame
 
-    def compare(self, other):
-        position_thresh = np.linalg.norm(self.position - other.position)
-        magnitude_thresh = np.abs(self.magnitude - other.magnitude)
-        direction_thresh = self.direction.dot(other.direction)
-        area_thresh = np.abs(self.area - other.area)
-        rotation_thresh = np.abs(self.rotation - other.rotation)
+    def get_thresholds(self, attributes):
+        position_thresh = np.linalg.norm(self.position - attributes[0])
+        magnitude_thresh = np.abs(self.magnitude - attributes[1])
+        direction_thresh = self.direction.dot(attributes[2])
+        area_thresh = np.abs(self.area - attributes[3])
+        rotation_thresh = np.abs(self.rotation - attributes[4])
+        same_color = 1 if self.color == attributes[5] else 0
 
-        return [position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh]
+        return (position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh, same_color)
 
-    def compare_truth(self, other):
-        return self.color == other.color
+    def get_attributes(self):
+        return (self.position, self.magnitude, self.direction, self.area, self.rotation, self.color)
