@@ -29,8 +29,7 @@ class Object:
 
     def _filter_color(self, hsv_frame):
         mask = cv2.inRange(hsv_frame, self.hsv_color[0], self.hsv_color[1])
-        mask = cv2.dilate(mask, np.ones(
-            Object.DILATE_KERNEL_SIZE, np.uint8), iterations=Object.DILATE_ITER)
+        mask = cv2.dilate(mask, np.ones(Object.DILATE_KERNEL_SIZE, np.uint8), iterations=Object.DILATE_ITER)
         mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
         return mask
 
