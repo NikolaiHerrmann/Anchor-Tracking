@@ -1,5 +1,6 @@
 
 import cv2
+import numpy as np
 import sys
 from object import Object
 from color import Color
@@ -11,10 +12,10 @@ SCREEN_MAIN = "objects"
 
 
 def track(vid_cap):
-
-    objects = []
-    for color in Color:
-        objects.append(Object(color))
+    #Colors.update_hsv_bounds(Colors.GREEN, np.array([[90, 30, 244], [102, 150, 255]]))
+    # objects = []
+    # for color in Color:
+    #     objects.append(Object(color))
 
     anchor = Anchor()
 

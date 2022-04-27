@@ -1,15 +1,27 @@
 
-import enum
+from enum import Enum
 import numpy as np
 
 
-class Color(enum.Enum):
+class Color(Enum):
     
-    GREEN = 1
-    BLUE = 2
+    GREEN = 0
+    BLUE = 1
+    RED = 2
+    YELLOW = 3
+    ORANGE = 4
+    WHITE = 5
+    BLACK = 6
+    PURPLE = 7
+    BROWN = 8
 
     def get_hsv_bounds(self):
-        if self == Color.GREEN:
-            return np.array([[90, 30, 244], [102, 150, 255]])
-        if self == Color.BLUE:
-            return np.array([[78, 104, 114], [83, 226, 239]])
+        return Color._lookup.get(self)
+
+    def update_hsv_bounds(color, bounds):
+        Color._lookup[color] = bounds
+
+Color._lookup = {
+    Color.GREEN : np.array([[90, 30, 244], [102, 150, 255]]),
+    Color.BLUE : np.array([[78, 104, 114], [83, 226, 239]])
+}

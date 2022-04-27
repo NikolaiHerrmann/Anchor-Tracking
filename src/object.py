@@ -21,9 +21,9 @@ class Object:
     DILATE_KERNEL = np.ones((3, 3), np.uint8)
     BLUR_KERNEL_SIZE = (7, 7)
 
-    def __init__(self, track_color):
-        self.track_color = track_color
-        self.hsv_color = track_color.get_hsv_bounds()
+    def __init__(self, color):
+        self.color = color
+        self.hsv_color = color.get_hsv_bounds()
         self.debug = True
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
@@ -36,8 +36,8 @@ class Object:
         mask = cv2.dilate(mask, Object.DILATE_KERNEL, iterations = 2)
         mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
 
-        if self.debug:
-            cv2.imshow("Mask " + str(self.id), mask)
+        # if self.debug:
+        #     cv2.imshow("Mask " + str(self.id), mask)
         
         return mask
 
@@ -88,8 +88,8 @@ class Object:
             self.area = cv2.contourArea(box_points)
             self.rotation = area_stats[2]
 
-            if self.debug:
-                print(self.position, self.magnitude, self.direction, self.area, self.rotation)
+            # if self.debug:
+            #     print(self.position, self.magnitude, self.direction, self.area, self.rotation)
 
         return found, overlay_frame
 
@@ -100,7 +100,7 @@ class Object:
         area_thresh = np.abs(self.area - other.area)
         rotation_thresh = np.abs(self.rotation - other.rotation)
 
-        return (position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh)
+        return [position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh]
 
     def compare_truth(self, other):
-        return self.track_color == other.track_color
+        return self.color == other.color
