@@ -6,6 +6,9 @@ import numpy as np
 SCREEN_MAIN = "Filter HSV Bounds"
 ESC = 27
 EXIT_DELAY = 1
+TEXT_COL = (255, 255, 255)
+TEXT_LOC = (50, 50)
+TEXT_DIM = 2
 
 VALUES = {'H min': 179, 'S min': 255, 'V min': 255,
           'H max': 179, 'S max': 255, 'V max': 255}
@@ -37,6 +40,8 @@ if __name__ == "__main__":
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv_frame, values[0:3], values[3:6])
         frame = cv2.bitwise_and(frame, frame, mask=mask)
+
+        cv2.putText(frame, str(main_values), TEXT_LOC, cv2.FONT_HERSHEY_PLAIN, TEXT_DIM, TEXT_COL)
 
         cv2.imshow(SCREEN_MAIN, frame)
 

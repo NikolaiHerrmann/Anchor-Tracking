@@ -23,7 +23,7 @@ class Color(Enum):
 
 
 Color._lookup = {
-    Color.GREEN: np.array([[78, 71, 178], [84, 160, 255]]),
+    Color.GREEN: np.array([[75, 99, 174], [82, 175, 243]]),
     Color.BLUE: np.array([[85, 33, 236], [104, 130, 255]]),
     Color.RED: np.array([[0, 140, 247], [14, 202, 255]])
 }
