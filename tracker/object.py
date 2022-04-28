@@ -11,8 +11,8 @@ class Object:
     LINE_THICKNESS = 2
     ALPHA = 0.75
     CIRCLE_RADIUS = 4
-    TEXT_SCALE = 1.
-    UNKNOWN_LABEL = "unknown"
+    TEXT_SCALE = 1
+    UNKNOWN_LABEL = "na"
 
     # Param
     DIR_BUFFER_SIZE = 30
@@ -25,7 +25,6 @@ class Object:
         self.color = color
         self.id = Object.UNKNOWN_LABEL
         self.hsv_color = color.get_hsv_bounds()
-        self.debug = True
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
 
@@ -55,11 +54,13 @@ class Object:
 
         # ID
         text_coor = min(box_points, key=lambda x: x[1])
+        text = "tar_id=" + str(self.color.value) + " "
         if self.id == Object.UNKNOWN_LABEL:
-            text = Object.UNKNOWN_LABEL
+            text += Object.UNKNOWN_LABEL
         else:
-            text = "Pred: " + str(self.id.name)
-        cv2.putText(overlay_frame, text, text_coor, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, Object.RGB_WHITE)
+            text += "pred_id=" + str(self.id.value)
+        text_color = Object.RGB_WHITE if self.color == self.id  else Object.RGB_RED
+        cv2.putText(overlay_frame, text, text_coor, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, text_color)
 
         # Position (center of bounding box)
         cx = np.intp(area_stats[0][0])

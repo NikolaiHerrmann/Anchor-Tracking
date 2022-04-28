@@ -7,7 +7,7 @@ SCREEN_MAIN = "Filter HSV Bounds"
 ESC = 27
 EXIT_DELAY = 1
 TEXT_COL = (255, 255, 255)
-TEXT_LOC = (50, 50)
+TEXT_LOC = (100, 50)
 TEXT_DIM = 2
 
 VALUES = {'H min': 179, 'S min': 255, 'V min': 255,
@@ -20,9 +20,8 @@ if __name__ == "__main__":
     cv2.namedWindow(SCREEN_MAIN)
 
     for key, value in VALUES.items():
-        cv2.createTrackbar(key, SCREEN_MAIN, 0, value, lambda x: x)
-        if "max" in key:
-            cv2.setTrackbarPos(key, SCREEN_MAIN, value)
+        init_val = value if "max" in key else 0
+        cv2.createTrackbar(key, SCREEN_MAIN, init_val, value, lambda x: x)
 
     values = np.zeros(6, dtype=np.uint8)
     main_values = np.zeros(6, dtype=np.uint8)
@@ -47,6 +46,6 @@ if __name__ == "__main__":
 
         if cv2.waitKey(EXIT_DELAY) == ESC:
             break
-
-    cv2.destroyAllWindows()
+    
     vid_cap.release()
+    cv2.destroyAllWindows()
