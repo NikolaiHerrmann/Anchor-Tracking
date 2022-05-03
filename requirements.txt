@@ -1,5 +1,6 @@
-opencv-python
 numpy
-statsmodels
+scipy
+opencv-python
 scikit-learn
 pandas
+statsmodels

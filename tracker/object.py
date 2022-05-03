@@ -21,8 +21,9 @@ class Object:
     DILATE_ITER = 2
     BLUR_KERNEL_SIZE = (7, 7)
 
-    def __init__(self, color):
+    def __init__(self, color, is_training):
         self.color = color
+        self.is_training = is_training
         self.id = Object.UNKNOWN_LABEL
         self.hsv_color = color.get_hsv_bounds()
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
@@ -54,12 +55,17 @@ class Object:
 
         # ID
         text_coor = min(box_points, key=lambda x: x[1])
-        text = "tar_id=" + str(self.color.value) + " "
-        if self.id == Object.UNKNOWN_LABEL:
-            text += Object.UNKNOWN_LABEL
+        if not self.is_training:
+            text = "tar_id=" + str(self.color.value) + " "
+            if self.id == Object.UNKNOWN_LABEL:
+                text += Object.UNKNOWN_LABEL
+            else:
+                text += "pred_id=" + str(self.id.value)
+            text_color = Object.RGB_WHITE if self.color == self.id  else Object.RGB_RED
         else:
-            text += "pred_id=" + str(self.id.value)
-        text_color = Object.RGB_WHITE if self.color == self.id  else Object.RGB_RED
+            text = str(self.color.name)
+            text_color = Object.RGB_WHITE
+        
         cv2.putText(overlay_frame, text, text_coor, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, text_color)
 
         # Position (center of bounding box)
