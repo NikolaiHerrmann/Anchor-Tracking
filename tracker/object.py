@@ -2,6 +2,10 @@
 import cv2
 import numpy as np
 
+import sys
+sys.path.append('../kalman_filter')
+from kf import KF
+
 
 class Object:
 
@@ -28,6 +32,8 @@ class Object:
         self.hsv_color = color.get_hsv_bounds()
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
+        self.kf = KF()
+        self.kf.predict()
 
     def _filter_color(self, hsv_frame):
         mask = cv2.inRange(hsv_frame, self.hsv_color[0], self.hsv_color[1])
@@ -87,6 +93,13 @@ class Object:
         cv2.arrowedLine(overlay_frame, (cx, cy), (cx + dx, cy + dy), Object.RGB_RED, Object.LINE_THICKNESS)
 
         dir_vec = np.array([dx, dy])
+
+        self.kf.update(cx, cy)
+        
+        # (x, y) = self.kf.predict()
+        # x_ = np.intp(x).item()
+        # y_ = np.intp(y).item()
+        # cv2.circle(overlay_frame, (x_, y_), 10, (255, 0, 0), 6)
 
         self.position = np.array([cx, cy])
         self.magnitude = np.linalg.norm(dir_vec)

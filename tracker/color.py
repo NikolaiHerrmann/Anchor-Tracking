@@ -7,8 +7,8 @@ import numpy as np
 class Color(Enum):
 
     #GREEN = 0
-    #BLUE = 1
-    BROWN = 0
+    BLUE = 0
+    #BROWN = 0
     #YELLOW = 3
     #BLACK = 4
     # ORANGE = 4
@@ -26,8 +26,8 @@ class Color(Enum):
 
 Color._lookup = {
     #Color.GREEN: np.array([[58, 144, 30], [100, 255, 77]]),
-    #Color.BLUE: np.array([[93, 135, 109], [105, 232, 223]]),
-    Color.BROWN: np.array([[0, 46, 63], [14, 148, 121]]),
+    Color.BLUE: np.array([[93, 135, 109], [105, 232, 223]]),
+    #Color.BROWN: np.array([[0, 46, 63], [14, 148, 121]]),
     #Color.YELLOW: np.array([[0, 89, 148], [64, 180, 215]]),
     #Color.BLACK: np.array([[99, 36, 0], [179, 140, 62]])
 }

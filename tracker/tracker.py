@@ -17,11 +17,12 @@ class Tracker:
     CAMERA_FPS = 30
 
     RECORD_FORMAT = 'MJPG'
-    RECORD_NAME = "track_video_5t.mp4"
+    RECORD_NAME = "ml_tracking.mp4"
     DATA_PATH = "data"
 
     def __init__(self, camera_arg, is_training):
         self.is_training = is_training
+        
 
         self.vid_cap = cv2.VideoCapture(camera_arg)
         self.vid_cap.set(cv2.CAP_PROP_FRAME_WIDTH, Tracker.CAMERA_RES[0])
@@ -32,6 +33,8 @@ class Tracker:
 
         for color in Color:
             self.objects.append(Object(color, self.is_training))
+
+        self.is_training = True
 
         if self.is_training:
             path = os.path.join("..", Tracker.DATA_PATH)
@@ -48,21 +51,24 @@ class Tracker:
             if not ret:
                 break
 
-            if self.is_training:
-                self.out_stream.write(frame)
+            
+            #self.out_stream.write(frame)
 
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
             for obj in self.objects:
                 found, frame = obj.draw(hsv_frame, frame)
                 if found:
-                    self.anchor.match(obj)
+                    self.anchor.match(obj, frame)
 
-            if not self.is_training:
-                text = "Accuracy=" + str(round(self.anchor.get_accuracy(), 3))
-                cv2.putText(frame, text, Tracker.ACCURACY_LOC, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, Object.RGB_WHITE)
+            # if not self.is_training:
+            #     text = "Accuracy=" + str(round(self.anchor.get_accuracy(), 3))
+            #     cv2.putText(frame, text, Tracker.ACCURACY_LOC, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, Object.RGB_WHITE)
 
             cv2.imshow(Tracker.SCREEN_MAIN, frame)
+
+            if self.is_training:
+                self.out_stream.write(frame)
 
             if cv2.waitKey(Tracker.EXIT_DELAY) == Tracker.ESC:
                 break

@@ -7,12 +7,12 @@ class KF:
     Class adapted from https://machinelearningspace.com/2d-object-tracking-using-kalman-filter/
     """
     
-    DT = 0.03
+    DT = 1 / 30.0
     U_X = 1
     U_Y = 1
-    STD_ACC = 5
-    X_STD_MEAS = 0.1
-    Y_STD_MEAS = 0.1
+    STD_ACC = 2
+    X_STD_MEAS = 0.05
+    Y_STD_MEAS = 0.05
 
     def __init__(self):
         self.u = np.matrix([[KF.U_X], [KF.U_Y]])
@@ -39,10 +39,11 @@ class KF:
     def predict(self):
         self.x = np.dot(self.A, self.x) + np.dot(self.B, self.u)
         self.P = np.dot(np.dot(self.A, self.P), self.A.T) + self.Q
-        return self.x[0:2]
+        return self.x[0], self.x[1]
 
-    def update(self, z):
+    def update(self, cx, cy):
+        z = np.array([[cx], [cy]])
         S = np.dot(self.H, np.dot(self.P, self.H.T)) + self.R
         K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))
-        self.x = self.x + np.dot(K, (z - np.dot(self.H, self.x)))
+        self.x = self.x + np.dot(K, z - np.dot(self.H, self.x))
         self.P = (self.I - (K * self.H)) * self.P
