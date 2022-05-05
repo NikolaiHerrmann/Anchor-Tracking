@@ -1,4 +1,5 @@
 
+from scipy.fft import idstn
 from color import Color
 import numpy as np
 import pandas as pd
@@ -8,13 +9,14 @@ import os
 
 class Anchor:
 
-    def __init__(self, is_training=False):
+    def __init__(self, is_training):
         self.is_training = is_training
-        self.anchors = [None] * len(Color)
+        self.anchors = {}
         if not self.is_training:
             self.load_model("knn")
             self.correct_pred = 0
             self.total_pred = 0
+            self.maxId = 0
         else:
             self.data = []
 
@@ -23,29 +25,50 @@ class Anchor:
         with open(os.path.join(path, model_name + ext), "rb") as f:
             self.model = joblib.load(f)
 
-    def match(self, obj):
-        for anchor_attributes in self.anchors:
-            if not anchor_attributes:
-                continue
+    def training_match(self, obj):
+        for anchor in self.anchors.keys():
+
+            anchor_attributes = self.anchors[anchor]
+            thresholds = obj.get_thresholds(anchor_attributes)
+
+            self.data.append(thresholds)
+
+        self.anchors[obj.color.value] = obj.get_attributes()
+
+    def model_match(self, obj):
+        probs = {}
+        
+        for anchor in self.anchors.keys():
+            anchor_attributes = self.anchors[anchor]
 
             thresholds = obj.get_thresholds(anchor_attributes)
 
-            if self.is_training:
-                self.data.append(thresholds)
-            else:
-                target = thresholds[5]
-                features = np.array([thresholds[0:5]])
+            features = np.array([thresholds[0:5]])
+            target = thresholds[5]
 
-                pred = self.model.predict(features)
+            pred = self.model.predict(features)[0]
+            if pred == 1:
+                probs[anchor] = self.model.predict_proba(features)[0][1]
 
-                self.correct_pred += 1 if pred == target else 0
-                self.total_pred += 1
+            self.correct_pred += 1 if pred == target else 0
+            self.total_pred += 1
+        
+        new_attributes = obj.get_attributes()
+        if len(probs) == 0: # acquire
+            self.anchors[self.maxId] = new_attributes
+            self.maxId += 1
+            id = self.maxId
+        else: # require
+            id = max(probs, key=probs.get)
+            self.anchors[id] = new_attributes
 
-                if pred == 1:
-                    obj.id = anchor_attributes[5]
-                    break
+        obj.id = id
 
-        self.anchors[obj.color.value] = obj.get_attributes()
+    def match(self, obj):
+        if self.is_training:
+            self.training_match(obj)
+        else:
+            self.model_match(obj)
 
     def get_accuracy(self):
         if self.is_training:

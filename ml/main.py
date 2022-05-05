@@ -11,8 +11,8 @@ import pandas as pd
 import os
 
 
-DATA_PATH = "../data/tracking_data.csv"
-DATA_SPLIT = 0.3
+DATA_PATH = "../data/tracking_data2.csv"
+DATA_SPLIT = 0.01
 
 
 def save(model, model_name, dir="model", ext=".pkl"):

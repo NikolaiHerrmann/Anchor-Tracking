@@ -17,7 +17,7 @@ class Tracker:
     CAMERA_FPS = 30
 
     RECORD_FORMAT = 'MJPG'
-    RECORD_NAME = "track_video.mp4"
+    RECORD_NAME = "track_video_5t.mp4"
     DATA_PATH = "data"
 
     def __init__(self, camera_arg, is_training):

@@ -4,7 +4,7 @@ import os
 import warnings
 from tracker import Tracker
 
-IS_TRAINING = True
+IS_TRAINING = False
 
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')

@@ -56,12 +56,12 @@ class Object:
         # ID
         text_coor = min(box_points, key=lambda x: x[1])
         if not self.is_training:
-            text = "tar_id=" + str(self.color.value) + " "
-            if self.id == Object.UNKNOWN_LABEL:
-                text += Object.UNKNOWN_LABEL
-            else:
-                text += "pred_id=" + str(self.id.value)
-            text_color = Object.RGB_WHITE if self.color == self.id  else Object.RGB_RED
+            # text = "tar_id=" + str(self.color.value) + " "
+            # if self.id == Object.UNKNOWN_LABEL:
+            #     text += Object.UNKNOWN_LABEL
+            # else:
+            text = "id=" + str(self.id)
+            text_color = Object.RGB_WHITE #if self.color == self.id  else Object.RGB_RED
         else:
             text = str(self.color.name)
             text_color = Object.RGB_WHITE
