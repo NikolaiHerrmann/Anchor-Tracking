@@ -58,8 +58,8 @@ class Tracker:
 
             for obj in self.objects:
                 found, frame = obj.draw(hsv_frame, frame)
-                if found:
-                    self.anchor.match(obj, frame)
+                #if found:
+                self.anchor.match(obj, frame)
 
             # if not self.is_training:
             #     text = "Accuracy=" + str(round(self.anchor.get_accuracy(), 3))

@@ -8,9 +8,9 @@ class KF:
     """
     
     DT = 1 / 30.0
-    U_X = 1
-    U_Y = 1
-    STD_ACC = 2
+    U_X = 2
+    U_Y = 2
+    STD_ACC = 0.25
     X_STD_MEAS = 0.05
     Y_STD_MEAS = 0.05
 

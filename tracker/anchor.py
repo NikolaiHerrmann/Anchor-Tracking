@@ -57,20 +57,14 @@ class Anchor:
                 probs[anchor] = self.model.predict_proba(features)[0][1]
                 self.total_pred += 1
             else:
-                print(obj.position)
-                print(np.array([x, y]))
-                diff = np.linalg.norm(np.array([x_, y_]) - obj.position)
-                #print(diff)
-                # if diff > 50:
-                #     print(diff)
+                diff = np.linalg.norm(np.array([x_, y_]) - anchor_attributes[0])
+                
+                print(diff)
+                print(obj.color, anchor_attributes[5])
                 if diff < 100:
-                    probs[anchor] = 1
+                    probs[anchor] = 1 - diff
                     self.correct_pred += 1
 
-
-            # self.correct_pred += 1 if pred == target else 0
-            # self.total_pred += 1
-        print(self.total_pred, self.correct_pred)
         cv2.putText(frame, "# ml used: "+ str(self.total_pred), (50, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, (0, 0, 255))
         cv2.putText(frame, "# kalman needed: " + str(self.correct_pred), (50, 80), cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 0, 0))
         cv2.putText(frame, "total ids: " + str(self.maxId - 1), (50, 100), cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 255, 255))
@@ -81,12 +75,13 @@ class Anchor:
             self.anchors[self.maxId] = new_attributes
             self.maxId += 1
             id = self.maxId
+            print("acquired")
         else: # require
             id = max(probs, key=probs.get)
             self.anchors[id] = new_attributes
 
         obj.id = id
-        #print(len(self.anchors))
+        print("--- : " + str(len(self.anchors)))
 
     def match(self, obj, frame):
         if self.is_training:

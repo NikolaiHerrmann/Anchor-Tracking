@@ -11,3 +11,5 @@ model/
 
 *.avi
 *.mp4
+
+out.*

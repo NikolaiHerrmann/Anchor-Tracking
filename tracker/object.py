@@ -1,9 +1,10 @@
 
 import cv2
 import numpy as np
-
+import os
 import sys
-sys.path.append('../kalman_filter')
+
+sys.path.append(os.path.join("..", "kalman_filter"))
 from kf import KF
 
 
