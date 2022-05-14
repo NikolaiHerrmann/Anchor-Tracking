@@ -13,11 +13,11 @@ class Object:
     # Appearance
     RGB_RED = (0, 0, 255)
     RGB_WHITE = (255, 255, 255)
+    RGB_GREEN = (0, 255, 0)
     LINE_THICKNESS = 2
     ALPHA = 0.75
     CIRCLE_RADIUS = 4
-    TEXT_SCALE = 1
-    UNKNOWN_LABEL = "na"
+    TEXT_SCALE = 0.6
 
     # Param
     DIR_BUFFER_SIZE = 30
@@ -29,7 +29,6 @@ class Object:
     def __init__(self, color, is_training):
         self.color = color
         self.is_training = is_training
-        self.id = Object.UNKNOWN_LABEL
         self.hsv_color = color.get_hsv_bounds()
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
@@ -42,7 +41,22 @@ class Object:
         mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
         return mask
 
-    def draw(self, hsv_frame, frame):
+    def draw_id(self, id, frame):
+        text_coor = min(self.box_points, key=lambda x: x[1])
+        if not self.is_training:
+            # text = "tar_id=" + str(self.color.value) + " "
+            # if self.id == Object.UNKNOWN_LABEL:
+            #     text += Object.UNKNOWN_LABEL
+            # else:
+            text = "ID " + str(id)
+            text_color = Object.RGB_GREEN #if self.color == self.id  else Object.RGB_RED
+        else:
+            text = str(self.color.name)
+            text_color = Object.RGB_GREEN
+        
+        cv2.putText(frame, text, text_coor, cv2.FONT_HERSHEY_SIMPLEX, Object.TEXT_SCALE, text_color, 2)
+
+    def detect(self, hsv_frame, frame):
         mask = self._filter_color(hsv_frame)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -55,25 +69,10 @@ class Object:
 
         # Bounding box
         area_stats = cv2.minAreaRect(max_contour)
-        box_points = np.intp(cv2.boxPoints(area_stats))
-        cv2.drawContours(overlay_frame, [box_points], 0, Object.RGB_WHITE, thickness=cv2.FILLED)
+        self.box_points = np.intp(cv2.boxPoints(area_stats))
+        cv2.drawContours(overlay_frame, [self.box_points], 0, Object.RGB_WHITE, thickness=cv2.FILLED)
         overlay_frame = cv2.addWeighted(overlay_frame, Object.ALPHA, frame, 1 - Object.ALPHA, 0)
-        cv2.drawContours(overlay_frame, [box_points], 0, Object.RGB_RED, Object.LINE_THICKNESS)
-
-        # ID
-        text_coor = min(box_points, key=lambda x: x[1])
-        if not self.is_training:
-            # text = "tar_id=" + str(self.color.value) + " "
-            # if self.id == Object.UNKNOWN_LABEL:
-            #     text += Object.UNKNOWN_LABEL
-            # else:
-            text = "id=" + str(self.id)
-            text_color = Object.RGB_WHITE #if self.color == self.id  else Object.RGB_RED
-        else:
-            text = str(self.color.name)
-            text_color = Object.RGB_WHITE
-        
-        cv2.putText(overlay_frame, text, text_coor, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, text_color)
+        cv2.drawContours(overlay_frame, [self.box_points], 0, Object.RGB_RED, Object.LINE_THICKNESS)
 
         # Position (center of bounding box)
         cx = np.intp(area_stats[0][0])
@@ -96,16 +95,11 @@ class Object:
         dir_vec = np.array([dx, dy])
 
         self.kf.update(cx, cy)
-        
-        # (x, y) = self.kf.predict()
-        # x_ = np.intp(x).item()
-        # y_ = np.intp(y).item()
-        # cv2.circle(overlay_frame, (x_, y_), 10, (255, 0, 0), 6)
 
         self.position = np.array([cx, cy])
         self.magnitude = np.linalg.norm(dir_vec)
         self.direction = dir_vec if self.magnitude == 0 else dir_vec / self.magnitude
-        self.area = cv2.contourArea(box_points)
+        self.area = cv2.contourArea(self.box_points)
         self.rotation = area_stats[2]
 
         return True, overlay_frame

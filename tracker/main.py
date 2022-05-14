@@ -5,7 +5,7 @@ import warnings
 from tracker import Tracker
 
 INPUT_DIR = os.path.join("..", Tracker.DATA_PATH)
-INPUT_FILE = "track_video2.mp4"
+INPUT_FILE = "track_video_6t.mp4"
 IS_TRAINING = False
 
 if __name__ == "__main__":

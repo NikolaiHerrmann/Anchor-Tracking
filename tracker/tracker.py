@@ -11,7 +11,6 @@ class Tracker:
     ESC = 27
     SCREEN_MAIN = "Object Tracker"
     EXIT_DELAY = 1
-    ACCURACY_LOC = (50, 50)
 
     CAMERA_RES = (640, 480)
     CAMERA_FPS = 30
@@ -22,9 +21,11 @@ class Tracker:
 
     def __init__(self, camera_arg, is_training):
         self.is_training = is_training
-        
 
         self.vid_cap = cv2.VideoCapture(camera_arg)
+        if not self.vid_cap.isOpened():
+            raise Exception("Video or camera failed to open!")
+
         self.vid_cap.set(cv2.CAP_PROP_FRAME_WIDTH, Tracker.CAMERA_RES[0])
         self.vid_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, Tracker.CAMERA_RES[1])
         
@@ -57,7 +58,7 @@ class Tracker:
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
             for obj in self.objects:
-                found, frame = obj.draw(hsv_frame, frame)
+                found, frame = obj.detect(hsv_frame, frame)
                 #if found:
                 self.anchor.match(obj, frame)
 

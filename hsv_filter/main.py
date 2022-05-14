@@ -1,3 +1,6 @@
+"""
+Adapted from https://stackoverflow.com/questions/57469394/opencv-choosing-hsv-thresholds-for-color-filtering
+"""
 
 import cv2
 import sys
@@ -40,12 +43,13 @@ if __name__ == "__main__":
         mask = cv2.inRange(hsv_frame, values[0:3], values[3:6])
         frame = cv2.bitwise_and(frame, frame, mask=mask)
 
-        cv2.putText(frame, str(main_values), TEXT_LOC, cv2.FONT_HERSHEY_PLAIN, TEXT_DIM, TEXT_COL)
+        cv2.putText(frame, str(main_values), TEXT_LOC,
+                    cv2.FONT_HERSHEY_PLAIN, TEXT_DIM, TEXT_COL)
 
         cv2.imshow(SCREEN_MAIN, frame)
 
         if cv2.waitKey(EXIT_DELAY) == ESC:
             break
-    
+
     vid_cap.release()
     cv2.destroyAllWindows()
