@@ -18,6 +18,7 @@ DATA_PATH = os.path.join("..", "data", "all_tracking.csv")
 DATA_SPLIT = 0.3
 FOLDS = 5
 KNN_N_NEIGHBORS = 3
+GRAPH_DIR = "graphs"
 
 
 def save(model, model_name, dir="model", ext=".pkl"):
@@ -37,6 +38,13 @@ def concat_csv(name="all_tracking"):
     print(files)
     df = pd.concat(map(pd.read_csv, files), ignore_index=True)
     df.to_csv(os.path.join(dir, name + ".csv"), index=False)
+
+
+def save_graph(name, dir_=GRAPH_DIR):
+    name = name.replace(" ", "_").lower()
+    if not os.path.isdir(dir_):
+        os.mkdir(dir_)
+    plt.savefig(os.path.join(dir_, name + ".pdf"))
 
 
 def plot_learning_curve(model, model_name, X, y, folds):
@@ -75,7 +83,7 @@ def plot_learning_curve(model, model_name, X, y, folds):
     axes.legend(loc="best")
 
     plt.title(model_name + " Learning Curve", fontsize=12)
-    plt.savefig("l_curve_" + model_name + ".pdf")
+    save_graph("l_curve_" + model_name)
 
 
 def fit(model, model_name, x_train, y_train, x_test, y_test):
@@ -101,11 +109,13 @@ def fit(model, model_name, x_train, y_train, x_test, y_test):
 
 def coor_plot(df):
     _, ax = plt.subplots(figsize=(11, 8))
-    sns.heatmap(df.corr(), cmap='coolwarm', square=True, ax=ax,
-                annot=True, linewidths=2, vmax=1, linecolor='white',
+    plot = sns.heatmap(df.corr(), cmap='coolwarm', square=True, ax=ax,
+                annot=True, linewidths=2, vmin = -0.2, vmax=1, linecolor='white',
                 annot_kws={'fontsize': 13})
-    plt.title('Feature Correlation', y=1.05, size=16)
-    plt.savefig("feat_coor.pdf")
+    plot.set_xticklabels(plot.get_xmajorticklabels(), fontsize=15)
+    plot.set_yticklabels(plot.get_ymajorticklabels(), fontsize=15, va='center')
+    plt.title('Feature Correlation', y=1.05, size=18)
+    save_graph("feat_coor")
 
 
 def get_data(path, y_col="class"):
@@ -130,9 +140,9 @@ def train(X, y, split, seed=42):
 
 
 if __name__ == "__main__":
-    X, y = get_data(DATA_PATH)
+    # concat_csv()
 
-    #coor_plot(X)
+    X, y = get_data(DATA_PATH)
+    coor_plot(X)
 
     train(X, y, DATA_SPLIT)
-    # concat_csv()
