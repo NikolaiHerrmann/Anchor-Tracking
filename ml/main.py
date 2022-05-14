@@ -51,8 +51,12 @@ def plot_learning_curve(model, model_name, X, y, folds):
     """
     Adapted from https://scikit-learn.org/stable/auto_examples/model_selection/plot_learning_curve.html
     """
+    sizes = [x for x in range(5000, 65000, 5000)]
+
     train_sizes, train_scores, test_scores = learning_curve(
-        model, X, y, cv=folds, n_jobs=None, return_times=False, scoring='f1_weighted'
+        model, X, y, cv=folds, n_jobs=None, 
+        train_sizes=sizes,
+        return_times=False, scoring='f1_weighted'
     )
 
     train_scores_mean = np.mean(train_scores, axis=1)
@@ -76,8 +80,10 @@ def plot_learning_curve(model, model_name, X, y, folds):
         alpha=0.1,
         color="purple",
     )
-    axes.plot(train_sizes, train_scores_mean, "o-", color="orange", label="training")
-    axes.plot(train_sizes, test_scores_mean, "o-", color="purple", label="cross-validation (" + str(folds) + " folds)")
+    axes.plot(train_sizes, train_scores_mean, "o-",
+              color="orange", label="training")
+    axes.plot(train_sizes, test_scores_mean, "o-", color="purple",
+              label="cross-validation (" + str(folds) + " folds)")
     axes.set_xlabel("Number of Observations", fontsize=12)
     axes.set_ylabel("F1 Score", fontsize=12)
     axes.legend(loc="best")
@@ -88,9 +94,7 @@ def plot_learning_curve(model, model_name, X, y, folds):
 
 def fit(model, model_name, x_train, y_train, x_test, y_test):
     model.fit(x_train, y_train)
-
     save(model, model_name)
-
     y_pred = model.predict(x_test)
 
     acc = metrics.accuracy_score(y_test, y_pred)
@@ -110,24 +114,48 @@ def fit(model, model_name, x_train, y_train, x_test, y_test):
 def coor_plot(df):
     _, ax = plt.subplots(figsize=(11, 8))
     plot = sns.heatmap(df.corr(), cmap='coolwarm', square=True, ax=ax,
-                annot=True, linewidths=2, vmin = -0.2, vmax=1, linecolor='white',
-                annot_kws={'fontsize': 13})
+                       annot=True, linewidths=2, vmin=-0.2, vmax=1, linecolor='white',
+                       annot_kws={'fontsize': 13})
     plot.set_xticklabels(plot.get_xmajorticklabels(), fontsize=15)
     plot.set_yticklabels(plot.get_ymajorticklabels(), fontsize=15, va='center')
     plt.title('Feature Correlation', y=1.05, size=18)
     save_graph("feat_coor")
 
 
+def undersample(df, y_col):
+    min_count = df[y_col].value_counts().min()
+    return df.groupby(y_col).apply(lambda x: x.sample(min_count)).reset_index(drop=True)
+
+
+def shuffle(df):
+    return df.sample(frac=1).reset_index(drop=True)
+
+
+def check_balance(y):
+    print("Data Set Balance: ")
+    size = len(y)
+    print("# observations =", size)
+    print("% of 1's =", round((y == 1).sum() / size, 3))
+    print("% of 0's =", round((y == 0).sum() / size, 3))
+
+
 def get_data(path, y_col="class"):
     df = pd.read_csv(path)
-    #df = np.array_split(df, 12)[0] # for quick testing
+
+    df = undersample(df, y_col)
+    df = shuffle(df)
+
     X = df.drop(y_col, axis=1)
     y = df[y_col]
+
+    check_balance(y)
+
     return X, y
 
 
-def train(X, y, split, seed=42):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=split, shuffle=True, random_state=seed)
+def train(X, y, split):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=split,
+                                                        shuffle=True)
 
     models = {"Naive Bayes": GaussianNB(),
               "KNN": KNeighborsClassifier(n_neighbors=KNN_N_NEIGHBORS),
