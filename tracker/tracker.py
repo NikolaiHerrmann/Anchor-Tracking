@@ -3,12 +3,12 @@ import cv2
 import os
 from object import Object
 from color import Color
-from anchor import Anchor
+from anchor_manager import AnchorManager
+import time
 
 
 class Tracker:
 
-    ESC = 27
     SCREEN_MAIN = "Object Tracker"
     EXIT_DELAY = 1
 
@@ -19,7 +19,9 @@ class Tracker:
     RECORD_NAME = "ml_tracking.mp4"
     DATA_PATH = "data"
 
-    def __init__(self, camera_arg, is_training):
+    ESC = 27
+
+    def __init__(self, camera_arg, is_training, kalman_help):
         self.is_training = is_training
 
         self.vid_cap = cv2.VideoCapture(camera_arg)
@@ -30,7 +32,7 @@ class Tracker:
         self.vid_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, Tracker.CAMERA_RES[1])
         
         self.objects = []
-        self.anchor = Anchor(self.is_training)
+        self.anchor_manager = AnchorManager(self.is_training, kalman_help)
 
         for color in Color:
             self.objects.append(Object(color, self.is_training))
@@ -51,7 +53,7 @@ class Tracker:
 
             if not ret:
                 break
-
+            #time.sleep(0.1)
             
             #self.out_stream.write(frame)
 
@@ -59,12 +61,7 @@ class Tracker:
 
             for obj in self.objects:
                 found, frame = obj.detect(hsv_frame, frame)
-                #if found:
-                self.anchor.match(obj, frame)
-
-            # if not self.is_training:
-            #     text = "Accuracy=" + str(round(self.anchor.get_accuracy(), 3))
-            #     cv2.putText(frame, text, Tracker.ACCURACY_LOC, cv2.FONT_HERSHEY_PLAIN, Object.TEXT_SCALE, Object.RGB_WHITE)
+                self.anchor_manager.match(obj, frame, found)
 
             cv2.imshow(Tracker.SCREEN_MAIN, frame)
 
@@ -74,7 +71,7 @@ class Tracker:
             if cv2.waitKey(Tracker.EXIT_DELAY) == Tracker.ESC:
                 break
 
-        self.anchor.save_data()
+        self.anchor_manager.save_data()
 
         self.vid_cap.release()
         if self.is_training:

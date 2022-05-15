@@ -1,6 +1,5 @@
 
 from enum import Enum
-from chess import BLACK
 import numpy as np
 
 
@@ -8,9 +7,9 @@ class Color(Enum):
 
     #
     BLUE = 0
-    # BROWN = 1
-    # YELLOW = 2
-    # GREEN = 3
+    #BROWN = 1
+    #YELLOW = 2
+    #GREEN = 3
     #BLACK = 0
     # ORANGE = 4
     # WHITE = 5
@@ -26,9 +25,9 @@ class Color(Enum):
 
 
 Color._lookup = {
-    # Color.GREEN: np.array([[58, 144, 30], [100, 255, 77]]),
+    #Color.GREEN: np.array([[58, 144, 30], [100, 255, 77]]),
     Color.BLUE: np.array([[93, 135, 109], [105, 232, 223]]),
-    # Color.BROWN: np.array([[0, 46, 63], [14, 148, 121]]),
-    # Color.YELLOW: np.array([[0, 89, 148], [64, 180, 215]]),
+    #Color.BROWN: np.array([[0, 46, 63], [14, 148, 121]]),
+    #Color.YELLOW: np.array([[0, 89, 148], [64, 180, 215]]),
     # Color.BLACK: np.array([[0, 0, 0], [0, 0, 0]])
 }

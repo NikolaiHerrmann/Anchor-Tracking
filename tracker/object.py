@@ -41,6 +41,13 @@ class Object:
         mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
         return mask
 
+    def draw_kalman_prediction(self, frame):
+        (x, y) = self.kf.predict()
+        x_ = np.intp(x).item()
+        y_ = np.intp(y).item()
+        cv2.circle(frame, (x_, y_), 10, (255, 0, 0), 6)
+        return x_, y_
+
     def draw_id(self, id, frame):
         text_coor = min(self.box_points, key=lambda x: x[1])
         if not self.is_training:
@@ -113,7 +120,7 @@ class Object:
 
         same_color = 1 if self.color == attributes[5] else 0
 
-        return (position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh, same_color)
+        return [position_thresh, magnitude_thresh, direction_thresh, area_thresh, rotation_thresh, same_color]
 
     def get_attributes(self):
         return (self.position, self.magnitude, self.direction, self.area, self.rotation, self.color)

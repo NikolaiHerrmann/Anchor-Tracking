@@ -7,6 +7,7 @@ from tracker import Tracker
 INPUT_DIR = os.path.join("..", Tracker.DATA_PATH)
 INPUT_FILE = "track_video_6t.mp4"
 IS_TRAINING = False
+KALMAN_HELP = True
 
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')
@@ -16,5 +17,5 @@ if __name__ == "__main__":
     else:
         camera_arg = os.path.join(INPUT_DIR, INPUT_FILE)
 
-    tracker = Tracker(camera_arg, IS_TRAINING)
+    tracker = Tracker(camera_arg, IS_TRAINING, KALMAN_HELP)
     tracker.run()
