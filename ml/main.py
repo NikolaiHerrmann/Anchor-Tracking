@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
 from matplotlib import pyplot as plt
 import statsmodels.api as sm
@@ -19,6 +20,7 @@ DATA_SPLIT = 0.3
 FOLDS = 5
 KNN_N_NEIGHBORS = 3
 GRAPH_DIR = "graphs"
+THRESH_PLOT_OB = 100
 
 
 def get_save_path(name, dir, ext):
@@ -100,11 +102,18 @@ def regression_stats(model, x_train, y_train):
     est_ = est.fit()
     print(est_.summary())
 
-    feature_importance = model.coef_[0]
-    plt.clf()
-    plt.bar(x_train.columns, feature_importance)
-    plt.title("Logistic Regression Feature Importance", fontsize=12)
-    save_graph("log_feat_import")
+
+def tree_stats(model, x_train, y_train):
+    importances = model.feature_importances_
+    std = np.std([importances for tree in model.estimators_], axis=0)
+    forest_importances = pd.Series(importances, index=x_train.columns)
+
+    fig, ax = plt.subplots()
+    forest_importances.plot.bar(yerr=std, ax=ax, color="purple")
+    ax.set_title("Feature importances using MDI")
+    ax.set_ylabel("Mean decrease in impurity")
+    fig.tight_layout()
+    save_graph("feat_import_tree")
 
 
 def fit(model, model_name, x_train, y_train, x_test, y_test):
@@ -116,10 +125,14 @@ def fit(model, model_name, x_train, y_train, x_test, y_test):
     f1_score = metrics.f1_score(y_test, y_pred)
     print(model_name, "\t", round(acc, 3), "\t\t", round(f1_score, 3))
 
+
+
     find_thresh(model, x_train, y_train)
 
     if model_name == "Logistic Regression":
         regression_stats(model, x_train, y_train)
+    if model_name == "Decision Tree":
+        tree_stats(model, x_train, y_train)
         
 
 def coor_plot(df):
@@ -133,7 +146,7 @@ def coor_plot(df):
     save_graph("feat_coor")
 
 
-def find_thresh(model, X_train, y_train, num_observations=10000):
+def find_thresh(model, X_train, y_train, num_observations=THRESH_PLOT_OB):
     y_scores = model.predict_proba(X_train)[:, 1]
     threshold = []
     accuracy = []
@@ -161,7 +174,7 @@ def find_thresh(model, X_train, y_train, num_observations=10000):
 
 def feature_drop(X):
     X = X.drop('rotation', axis=1)
-    return X#X.drop('direction', axis=1)
+    return X
 
 
 def undersample(df, y_col):
@@ -202,8 +215,9 @@ def train(X, y, split):
                                                         shuffle=True)
 
     models = {#"Naive Bayes": GaussianNB()}#,
-        "KNN": KNeighborsClassifier(n_neighbors=KNN_N_NEIGHBORS)}#,
-        #"Logistic Regression": LogisticRegression(max_iter=1000)}
+        #"KNN": KNeighborsClassifier(n_neighbors=KNN_N_NEIGHBORS)}#,
+        "Logistic Regression": LogisticRegression(max_iter=1000)}
+        #"Decision Tree": RandomForestClassifier(max_depth=10)}
 
     print("\t Accuracy \t F1-Score")
     for name, model in models.items():

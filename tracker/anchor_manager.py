@@ -4,16 +4,21 @@ import pandas as pd
 import joblib
 import os
 import cv2
+import sys
+sys.path.append(os.path.join("..", "kalman_filter"))
+from kf import KF
+
 
 
 class AnchorManager:
 
     THRESHOLD_PROBA = 0.72
 
-    def __init__(self, is_training, kalman_help):
+    def __init__(self, is_training):
         self.is_training = is_training
-        self.kalman_help = kalman_help
         self.anchors = {}
+        self.ids_taken = set()
+
 
         if not self.is_training:
             self.load_model("logistic_regression")
@@ -39,8 +44,8 @@ class AnchorManager:
     def model_match(self, obj, frame, found):
         cv2.putText(frame, "# IDS " + str(self.maxId - 1), (50, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-        if self.kalman_help:
-            x_, y_ = obj.draw_kalman_prediction(frame)
+        # if self.kalman_help:
+        #     x_, y_ = obj.draw_kalman_prediction(frame)
 
         if not found:
             return
@@ -49,48 +54,50 @@ class AnchorManager:
         
         for anchor, anchor_attributes in self.anchors.items():
 
+            if anchor in self.ids_taken:
+                continue
+                
+            (x, y) = anchor_attributes[6].predict()
+
+            anchor_attributes[0] = np.array([x.item(), y.item()])
+            obj.draw_kalman_prediction(frame, x.item(), y.item())
+
             thresholds = obj.get_thresholds(anchor_attributes)
+            
+        
             del thresholds[4]
-            #del thresholds[2]
             features = np.array([thresholds[0:4]])
+            diff = abs(anchor_attributes[3] - obj.area)
             
             # target = thresholds[5]
             
-            pred = self.model.predict(features)[0]
+            #pred = self.model.predict(features)[0]
             proba = self.model.predict_proba(features)[0]
 
-            # if pred == 1:
-            #     probs[anchor] = proba[1]
-            # elif proba[0] < 0.75:
-            #     probs[anchor] = proba[0]
-            #     print(proba)
             if proba[0] <= AnchorManager.THRESHOLD_PROBA:
                 probs[anchor] = proba[1]
-
-        
-        # if self.kalman_help:
-        #     if len(probs) == 0:
-        #         for anchor, anchor_attributes in self.anchors.items():
-        #             diff = np.linalg.norm(obj.position - anchor_attributes[0])
-        #             if diff < 100:
-        #                 probs[anchor] = 1 - diff
-
-
-        # cv2.putText(frame, "# ml used: "+ str(self.total_pred), (50, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, (0, 0, 255))
-        # cv2.putText(frame, "# kalman needed: " + str(self.correct_pred), (50, 80), cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 0, 0))
-        
+   
         new_attributes = obj.get_attributes()
-        print(probs)
 
         if len(probs) == 0: # acquire
+            kal = KF()
+            kal.predict()
+            kal.update(obj.position[0], obj.position[1])
+            new_attributes.append(kal)
+
             self.anchors[self.maxId] = new_attributes
             self.maxId += 1
             id = self.maxId
         else:               # re-acquire
             id = max(probs, key=probs.get)
-            self.anchors[id] = new_attributes
+            self.anchors[id][6].update(obj.position[0], obj.position[1])
+            self.anchors[id] = new_attributes + [self.anchors[id][6]]
 
+        self.ids_taken.add(id)
         obj.draw_id(id, frame)
+
+    def reset_ids(self):
+        self.ids_taken.clear()
 
     def match(self, obj, frame, found):
         if self.is_training:

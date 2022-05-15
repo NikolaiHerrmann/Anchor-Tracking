@@ -10,9 +10,9 @@ class KF:
     DT = 1 / 30.0
     U_X = 1
     U_Y = 1
-    STD_ACC = 5
-    X_STD_MEAS = 0.05
-    Y_STD_MEAS = 0.05
+    STD_ACC = 0.01
+    X_STD_MEAS = 0.001
+    Y_STD_MEAS = 0.001
 
     def __init__(self):
         self.u = np.matrix([[KF.U_X], [KF.U_Y]])
