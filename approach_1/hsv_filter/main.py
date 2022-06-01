@@ -8,7 +8,7 @@ import numpy as np
 
 SCREEN_MAIN = "Filter HSV Bounds"
 ESC = 27
-EXIT_DELAY = 1
+EXIT_DELAY = 50
 TEXT_COL = (255, 255, 255)
 TEXT_LOC = (100, 50)
 TEXT_DIM = 2
@@ -18,7 +18,7 @@ VALUES = {'H min': 179, 'S min': 255, 'V min': 255,
 
 if __name__ == "__main__":
     camera_idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    vid_cap = cv2.VideoCapture(camera_idx)
+    vid_cap = cv2.VideoCapture(2)
 
     cv2.namedWindow(SCREEN_MAIN)
 
@@ -30,7 +30,10 @@ if __name__ == "__main__":
     main_values = np.zeros(6, dtype=np.uint8)
 
     while True:
-        _, frame = vid_cap.read()
+        ret, frame = vid_cap.read()
+
+        if not ret:
+            break
 
         for idx, key in enumerate(VALUES.keys()):
             values[idx] = cv2.getTrackbarPos(key, SCREEN_MAIN)

@@ -5,8 +5,8 @@ import warnings
 from tracker import Tracker
 
 DATA_PATH = os.path.join("..", "data")
-INPUT_FILE = "track_video_5t.mp4"
-IS_TRAINING = False
+INPUT_FILE = "track_video3.mp4"
+IS_TRAINING = True
 
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')

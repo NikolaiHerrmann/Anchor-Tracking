@@ -60,7 +60,7 @@ class Object:
 
         overlay_frame = frame.copy()
 
-        max_contour = max(contours, key=cv2.contourArea)
+        max_contour = max(contours, key=cv2.contourArea) # = cv2.findNonZero(mask)
 
         # Bounding box
         area_stats = cv2.minAreaRect(max_contour)

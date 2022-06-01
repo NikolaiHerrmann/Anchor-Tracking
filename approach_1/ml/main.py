@@ -75,7 +75,7 @@ def plot_learning_curve(model, model_name, X, y, folds):
         train_scores_mean - train_scores_std,
         train_scores_mean + train_scores_std,
         alpha=0.1,
-        color="orange",
+        color="darkorange",
     )
     axes.fill_between(
         train_sizes,
@@ -85,7 +85,7 @@ def plot_learning_curve(model, model_name, X, y, folds):
         color="purple",
     )
     axes.plot(train_sizes, train_scores_mean, "o-",
-              color="orange", label="training")
+              color="darkorange", label="training")
     axes.plot(train_sizes, test_scores_mean, "o-", color="purple",
               label="cross-validation (" + str(folds) + " folds)")
     axes.set_xlabel("Number of Observations", fontsize=12)
@@ -105,13 +105,13 @@ def regression_stats(model, x_train, y_train):
 
 def tree_stats(model, x_train, y_train):
     importances = model.feature_importances_
-    std = np.std([importances for tree in model.estimators_], axis=0)
+    std = np.std([importances for _ in model.estimators_], axis=0)
     forest_importances = pd.Series(importances, index=x_train.columns)
 
     fig, ax = plt.subplots()
     forest_importances.plot.bar(yerr=std, ax=ax, color="purple")
-    ax.set_title("Feature importances using MDI")
-    ax.set_ylabel("Mean decrease in impurity")
+    ax.set_title("Feature Importances")
+    ax.set_ylabel("Mean Decrease in Impurity")
     fig.tight_layout()
     save_graph("feat_import_tree")
 
@@ -124,8 +124,6 @@ def fit(model, model_name, x_train, y_train, x_test, y_test):
     acc = metrics.accuracy_score(y_test, y_pred)
     f1_score = metrics.f1_score(y_test, y_pred)
     print(model_name, "\t", round(acc, 3), "\t\t", round(f1_score, 3))
-
-
 
     find_thresh(model, x_train, y_train)
 

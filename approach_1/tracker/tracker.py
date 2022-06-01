@@ -54,7 +54,7 @@ class Tracker:
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
             self.anchor_manager.reset_ids()
-
+            
             for obj in self.objects:
                 found, frame = obj.detect(hsv_frame, frame)
                 self.anchor_manager.match(obj, frame, found)

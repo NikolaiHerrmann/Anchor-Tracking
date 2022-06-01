@@ -39,7 +39,7 @@ class KF:
     def predict(self):
         self.x = np.dot(self.A, self.x) + np.dot(self.B, self.u)
         self.P = np.dot(np.dot(self.A, self.P), self.A.T) + self.Q
-        return self.x[0], self.x[1]
+        return self.x[0].item(), self.x[1].item()
 
     def update(self, cx, cy):
         z = np.array([[cx], [cy]])

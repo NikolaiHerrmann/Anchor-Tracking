@@ -35,17 +35,14 @@ class AnchorManager:
         for anchor in self.anchors.keys():
 
             anchor_attributes = self.anchors[anchor]
-            thresholds = obj.get_thresholds(anchor_attributes)
+            #thresholds = obj.get_thresholds(anchor_attributes)
 
-            self.data.append(thresholds)
+            #self.data.append(thresholds)
 
-        self.anchors[obj.color.value] = obj.get_attributes()
+        #self.anchors[obj.color.value] = obj.get_attributes()
 
     def model_match(self, obj, frame, found):
         cv2.putText(frame, "# IDS " + str(self.maxId - 1), (50, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
-        # if self.kalman_help:
-        #     x_, y_ = obj.draw_kalman_prediction(frame)
 
         if not found:
             return
@@ -59,19 +56,17 @@ class AnchorManager:
                 
             (x, y) = anchor_attributes[6].predict()
 
-            anchor_attributes[0] = np.array([x.item(), y.item()])
-            obj.draw_kalman_prediction(frame, x.item(), y.item())
+            #anchor_attributes[0] = np.array([x, y])
+            #obj.draw_kalman_prediction(frame, x, y)
 
             thresholds = obj.get_thresholds(anchor_attributes)
             
         
             del thresholds[4]
             features = np.array([thresholds[0:4]])
-            diff = abs(anchor_attributes[3] - obj.area)
             
             # target = thresholds[5]
             
-            #pred = self.model.predict(features)[0]
             proba = self.model.predict_proba(features)[0]
 
             if proba[0] <= AnchorManager.THRESHOLD_PROBA:

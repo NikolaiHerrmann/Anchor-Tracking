@@ -8,6 +8,10 @@ test*
 
 data/
 model/
+models/
+graphs/
+
+*.csv
 
 *.avi
 *.mp4
