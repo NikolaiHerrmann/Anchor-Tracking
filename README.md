@@ -6,9 +6,9 @@ Matching function was tested with Naive Bayes, KNN, Logistic Regression and Deci
 
 Two different approaches were compared:
 
-- Approach 1: Frame-wise Classification
-- Approach 2: Only anchor stationary objects and tracking moving ones (with help of Kalman Filter)
+- Approach 1: Frame-wise Classification (anchor everything all the time)
+- Approach 2: Only anchor stationary objects while tracking moving ones (with help of Kalman Filter)
 
-Colors were used as ground truth.
+Colors were used as ground truth for training.
 
 ![Shell game example](example.png)
