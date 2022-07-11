@@ -17,6 +17,6 @@ graphs/
 *.txt
 *.pkl
 *.pdf
-*.png
+*_*.png
 
 out.*
