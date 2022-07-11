@@ -10,7 +10,7 @@ class KF:
     DT = 1 / 30.0
     U_X = 1
     U_Y = 1
-    STD_ACC = 0.01
+    STD_ACC = 5
     X_STD_MEAS = 0.001
     Y_STD_MEAS = 0.001
 

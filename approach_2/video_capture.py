@@ -1,6 +1,7 @@
 
 import cv2
 from anchor_manager import AnchorManager
+from detector import Detector
 
 
 class VideoCapture:
@@ -18,7 +19,7 @@ class VideoCapture:
         self.record = record
         if self.record:
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-            self.out_stream = cv2.VideoWriter("vid.mp4", fourcc, 
+            self.out_stream = cv2.VideoWriter("better_example.mp4", fourcc, 
                                               self.FPS, self.RES)
         self.show_gui = show_gui
         self.anchorManager = AnchorManager(self.is_training, input)
@@ -32,13 +33,14 @@ class VideoCapture:
                 break
 
             self.anchorManager.step(t, frame)
+            
 
             if self.show_gui:
                 cv2.imshow("", frame)
             if self.record:
                 self.out_stream.write(frame)
 
-            if cv2.waitKey(VideoCapture.FRAME_DISPLAY_TIME) == VideoCapture.KILL_KEY:
+            if cv2.waitKey(1) == VideoCapture.KILL_KEY:
                 break
 
             t += 1
@@ -52,7 +54,7 @@ class VideoCapture:
             self.anchorManager.save_data()
             return None
         else:
-            return self.anchorManager.get_accuracy()
+            return self.anchorManager.get_f1_score()
 
     def select_model(self, model_name):
         self.anchorManager.load_model(model_name)

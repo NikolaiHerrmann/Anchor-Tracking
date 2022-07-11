@@ -28,13 +28,13 @@ class Object:
         self.hsv_color = color.get_hsv_bounds()
         self.dir_buffer = [(0, 0)] * self.DIR_BUFFER_SIZE
         self.dir_buffer_idx = 0
+        self.prev_id = -1
 
     def _filter_color(self, hsv_frame):
         mask = cv2.inRange(hsv_frame, self.hsv_color[0], self.hsv_color[1])
         mask = cv2.dilate(mask, np.ones(Object.DILATE_KERNEL_SIZE, np.uint8),
                           iterations=Object.DILATE_ITER)
         mask = cv2.GaussianBlur(mask, Object.BLUR_KERNEL_SIZE, 0)
-        cv2.imshow("Tracker.FRAME_TITLE", mask)
         return mask
 
     def draw_kalman_prediction(self, frame, x, y):
@@ -47,8 +47,8 @@ class Object:
         # find min y value
         text_coor = min(self.box_points, key=lambda x: x[1])
         text = str(id)
-        cv2.putText(frame, text, text_coor, cv2.FONT_HERSHEY_SIMPLEX,
-                    Object.TEXT_SCALE, Object.RGB_GREEN, Object.LINE_THICKNESS)
+        # cv2.putText(frame, text, text_coor, cv2.FONT_HERSHEY_SIMPLEX,
+        #             Object.TEXT_SCALE, Object.RGB_GREEN, Object.LINE_THICKNESS)
 
     def detect(self, hsv_frame, frame):
         mask = self._filter_color(hsv_frame)
@@ -65,26 +65,35 @@ class Object:
         # Bounding box
         area_stats = cv2.minAreaRect(max_contour)
         self.box_points = np.intp(cv2.boxPoints(area_stats))
-        cv2.drawContours(overlay_frame, [self.box_points], 0, 
-                         Object.RGB_WHITE, thickness=cv2.FILLED)
-        overlay_frame = cv2.addWeighted(overlay_frame, Object.ALPHA, frame, 
-                                        1 - Object.ALPHA, 0)
-        cv2.drawContours(overlay_frame, [self.box_points], 0, 
-                         Object.RGB_RED, Object.LINE_THICKNESS)
+        # cv2.drawContours(overlay_frame, [self.box_points], 0, 
+        #                  Object.RGB_WHITE, thickness=cv2.FILLED)
+        # overlay_frame = cv2.addWeighted(overlay_frame, Object.ALPHA, frame, 
+        #                                 1 - Object.ALPHA, 0)
+        # cv2.drawContours(overlay_frame, [self.box_points], 0, 
+        #                  Object.RGB_RED, Object.LINE_THICKNESS)
 
         # Position (center of bounding box)
         cx = np.intp(area_stats[0][0])
         cy = np.intp(area_stats[0][1])
-        cv2.circle(overlay_frame, (cx, cy), Object.CIRCLE_RADIUS,
-                   Object.RGB_RED, Object.LINE_THICKNESS)
+        # cv2.circle(overlay_frame, (cx, cy), Object.CIRCLE_RADIUS,
+        #            Object.RGB_RED, Object.LINE_THICKNESS)
+
+        contour = max_contour
+        #color = self.color.bgr()
+        color = (0, 0, 255)
+        rect_offset = 40
+        x, y, width, height = cv2.boundingRect(contour)
+        cv2.rectangle(overlay_frame, (x - rect_offset, y - rect_offset),
+                      (x + width + rect_offset, y + height + rect_offset), color, 2)
+        cv2.drawContours(overlay_frame, [contour], -1, color, 2)
+        cv2.putText(overlay_frame, "id " + str(self.prev_id), (x - 10, y + height + 30), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8, color, 2)
 
         # Direction Vector
         self.dir_buffer[self.dir_buffer_idx] = (cx, cy)
 
-        dx = self.dir_buffer[self.dir_buffer_idx][0] - \
-            self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][0]
-        dy = self.dir_buffer[self.dir_buffer_idx][1] - \
-            self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][1]
+        dx = self.dir_buffer[self.dir_buffer_idx][0] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][0]
+        dy = self.dir_buffer[self.dir_buffer_idx][1] - self.dir_buffer[self.dir_buffer_idx - Object.BUFFER_CMP_DIS][1]
 
         if self.dir_buffer_idx == self.DIR_BUFFER_SIZE - 1:  # ensure circular list indexing
             self.dir_buffer_idx = 0

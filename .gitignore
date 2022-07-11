@@ -12,8 +12,11 @@ models/
 graphs/
 
 *.csv
-
 *.avi
 *.mp4
+*.txt
+*.pkl
+*.pdf
+*.png
 
 out.*

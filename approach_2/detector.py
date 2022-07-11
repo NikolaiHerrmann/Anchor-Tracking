@@ -1,6 +1,8 @@
 
 import cv2
 import numpy as np
+from kalman import KF
+from color import Color
 
 class Detector:
 
@@ -26,16 +28,17 @@ class Detector:
         self.is_overlapping = 0
         self.is_resting = 0
         self.is_anchorable = False
-        self.track_position = (0, 0)
+        self.track_position = np.array([0, 0])
 
         self.x = self.DIM[1] + 1
         self.y = self.x
 
         self.id = -1
 
-    def detect(self, hsv_frame, motion_mask):
-        hsv_mask = self.get_hsv_mask(hsv_frame)
+        self.kf = KF()
 
+    def detect(self, hsv_frame, motion_mask):
+        hsv_mask = self.get_hsv_mask(hsv_frame)        
         self.found_color = cv2.countNonZero(hsv_mask) != 0
 
         if not self.found_color:
@@ -43,6 +46,32 @@ class Detector:
 
         contours, _ = cv2.findContours(hsv_mask, cv2.RETR_EXTERNAL,
                                        cv2.CHAIN_APPROX_NONE)
+
+        ## needed for when all 3 cards are blue
+        # contours = sorted(contours, key=lambda x: cv2.contourArea(x))
+
+        # if np.count_nonzero(self.track_position) != 0:
+        #     found = False
+        #     for cnt in contours:
+        #         pos = Detector.get_position_contour(cnt)
+        #         diff = np.linalg.norm(pos - self.track_position)
+        #         area = cv2.contourArea(cnt)
+        #         if diff < 100 and area > 6000:
+        #             self.possible_contour = cnt
+        #             #print("found: ", diff)
+        #             found = True
+        #             break
+        #         #print(diff)
+        #     if not found:
+        #         if self.color == Color.PINK:
+        #             self.possible_contour = max(contours, key=cv2.contourArea)
+        #         else:
+        #             self.found_color = False
+        #         return False
+        # else:           
+        #     self.possible_contour = max(contours, key=cv2.contourArea)
+
+
         self.possible_contour = max(contours, key=cv2.contourArea)
         self.possible_area = cv2.contourArea(self.possible_contour)
         if self.possible_area < 1000:
@@ -50,10 +79,15 @@ class Detector:
             return False
         self.possible_contour_mask = cv2.fillPoly(np.zeros(self.DIM), 
                                                   [self.possible_contour], 1)
+        
+        cv2.fillPoly(hsv_frame, [self.possible_contour], color=(0, 0, 0))
+        # cv2.imshow("c", hsv_frame)
 
         and_mask = np.logical_and(self.possible_contour_mask, motion_mask)
         future_in_motion = 1 if np.count_nonzero(and_mask == True) > \
                                 self.MOTION_THRESHOLD else 0
+
+
 
         self.is_anchorable = False
         
@@ -89,14 +123,19 @@ class Detector:
     def can_be_anchored(self):
         return self.is_anchorable
 
-    def track(self):            
+    def should_be_tracked(self):
+        return self.in_motion
+
+    def track(self):
+        self.kf.update(self.track_position[0], self.track_position[1])
+
         if self.found_color:
             if self.in_motion:
                 contour = self.possible_contour
-                self.track_position = self.get_position_contour(contour)
+                self.track_position = self.get_position_contour(contour)                
         else:
-            # print("no track position")
-            # for example check for total overlap
+            self.track_position = np.array(self.kf.predict())
+            # print("no track position ", self.track_position)
             return
 
     @staticmethod
@@ -111,17 +150,24 @@ class Detector:
         obj2.is_overlapping |= is_overlap
 
     def draw_prediction(self, draw_frame, radius_size=8):
-        cv2.circle(draw_frame, (np.intp(self.track_position[0]), np.intp(self.track_position[1])), 
-                   radius_size, self.color.bgr())
+        #print(np.intp(self.track_position[0]), np.intp(self.track_position[1]))
+        cx = np.intp(self.track_position[0])
+        cy = np.intp(self.track_position[1])
+        if self.color != Color.PINK:
+            if abs(cx) < 600 and abs(cy) < 600:
+                cv2.circle(draw_frame, (cx, cy), 
+                        radius_size, self.color.bgr(), 2)
 
-    def draw_bounding_box(self, draw_frame, rect_offset=20):
-        color = self.color.bgr()
-        x, y, width, height = cv2.boundingRect(self.contour)
-        cv2.rectangle(draw_frame, (x - rect_offset, y - rect_offset),
-                      (x + width + rect_offset, y + height + rect_offset), color)
-        cv2.drawContours(draw_frame, [self.contour], -1, color)
-        cv2.putText(draw_frame, "id " + str(self.id), (x - 10, y - 5), cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5, color, 1)
+    def draw_bounding_box(self, draw_frame, rect_offset=40, add_= 8):
+        if self.color != Color.PINK:
+            contour = self.contour
+            color = self.color.bgr()
+            x, y, width, height = cv2.boundingRect(contour)
+            cv2.rectangle(draw_frame, (x - rect_offset, y - rect_offset),
+                        (x + width + rect_offset, y + height + rect_offset), color, 2)
+            cv2.drawContours(draw_frame, [contour], -1, color, 2)
+            cv2.putText(draw_frame, "id " + str(self.id), (x - 10, y + height + 30), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8, color, 2)
 
     @staticmethod
     def get_position_contour(contour):

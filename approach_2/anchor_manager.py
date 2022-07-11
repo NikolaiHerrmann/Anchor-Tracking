@@ -7,6 +7,7 @@ import pandas as pd
 import os
 import numpy as np
 import joblib
+import re
 
 
 class AnchorManager:
@@ -20,12 +21,15 @@ class AnchorManager:
         self.tracked_colors = []
         self.anchors = {}
         self.color_switch = {}
-        self.total_switches = 0
         self.data = []
+        self.scores = {}
+
+        splits = re.split("\_|\.", file_name)
 
         for color in Color:
-            if color.name() in file_name:
-                self.tracked_colors.append(Detector(color))
+            for split in splits:
+                if color.name() == split:
+                    self.tracked_colors.append(Detector(color))
 
     def load_model(self, model_name, path=MODEL_PATH, ext=".pkl"):
         with open(os.path.join(path, model_name + ext), "rb") as f:
@@ -35,6 +39,7 @@ class AnchorManager:
         hsv_frame, motion_mask = Detector.get_hsv_and_motion(frame)
         seen_objs = []
         lost_objs = []
+        move_objs = []
 
         for color_obj in self.tracked_colors:
             if color_obj.detect(hsv_frame, motion_mask):
@@ -42,7 +47,10 @@ class AnchorManager:
             else:
                 lost_objs.append(color_obj)
 
-        return seen_objs, lost_objs
+            if color_obj.should_be_tracked():
+                move_objs.append(color_obj)
+
+        return seen_objs, lost_objs, move_objs
 
     def check_overlap(self, objs):
         comb = list(combinations(objs, 2))
@@ -76,19 +84,27 @@ class AnchorManager:
 
         obj.set_id(anchor.get_id())
 
-    def count_switches(self, obj, id):
-        self.total_switches += 1
-        val = self.color_switch.get(obj.color)
-        if val == None:
-            self.color_switch[obj.color] = (id, 0)
-        else:
-            prev_id = val[0]
-            count = val[1] 
-            if prev_id == id:
-                count += 1
-            self.color_switch[obj.color] = (id, count)
+    # def count_switches(self, obj, id):
+    #     val = self.color_switch.get(obj.color)
+    #     if val == None:
+    #         count = 1
+    #         total = 1
+    #     else:
+    #         prev_id = val[0]
+    #         count = val[1]
+    #         total = val[2] + 1
+    #         if prev_id == id:
+    #             count += 1
+        
+    #     self.color_switch[obj.color] = (id, count, total)
 
     def match_model(self, obj, t):
+        if obj.color == Color.PINK:
+            return
+
+        if self.scores.get(obj.color, None) == None:
+            self.scores[obj.color] = {"TP": 0, "FN": 0, "FP": 0, "TN": 0, "Stat": 0}
+        
         probs = {}
 
         for idx, anchor in self.anchors.items():
@@ -96,11 +112,21 @@ class AnchorManager:
             size_thresh = anchor.get_size_thresh(obj)
 
             features = [position_thresh, size_thresh]
+            actual = idx == obj.id
 
             proba = self.model.predict_proba(np.array([features]))[0]
             # print(position_thresh, size_thresh, proba, obj.color, anchor.track_color)
             if proba[0] < self.MODEL_THRESHOLD:
                 probs[idx] = proba[1]
+                if actual:
+                    self.scores[obj.color]['TP'] += 1
+                else:
+                    self.scores[obj.color]['FP'] += 1
+            else:
+                if actual:
+                    self.scores[obj.color]['FN'] += 1
+                else:
+                    self.scores[obj.color]['TN'] += 1
         
         if len(probs) == 0:
             anchor = Anchor(obj, t)
@@ -112,7 +138,6 @@ class AnchorManager:
 
         id = anchor.get_id()
         obj.set_id(id)
-        self.count_switches(obj, id)
 
     def match(self, obj, t):
         if self.is_training:
@@ -120,34 +145,50 @@ class AnchorManager:
         else:
             self.match_model(obj, t)
 
-    def track_train(self, obj, t):
+    def track(self, obj, t):
         obj.track()
+
         if self.is_training:
             anchor_idx = obj.get_track_color()
         else:
             anchor_idx = obj.id
-        anchor = self.anchors.get(anchor_idx)
+            min_ = 10000000000
+            anchor = None
 
-        if anchor is None:
-            return
+            anchor_ls = sorted(self.anchors.values(), key=lambda x: x.t, reverse=True)
+            for a in anchor_ls:
+                if a.track_color == obj.color:
+                    diff = np.linalg.norm(obj.get_track_position() - a.position)
+                    if diff < min_ and diff < 100:
+                        min_ = diff
+                        anchor = a
+                    #print(diff, a.get_id())
+            # print("--")
+            anchor_true = self.anchors.get(anchor_idx)
+            
+            if anchor is None:
+                return
 
-        anchor.track_update(obj, t)
+            anchor.track_update(obj, t)
 
     def step(self, t, frame):
-        seen_objs, lost_objs = self.get_objects(frame)
+        seen_objs, _, move_objs = self.get_objects(frame)
 
         self.check_overlap(seen_objs)
 
-        for color_obj in self.tracked_colors:            
-            self.track_train(color_obj, t)
+        for color_obj in move_objs:
+            self.track(color_obj, t)
+
+        for color_obj in self.tracked_colors:
             color_obj.draw(frame)
 
             if color_obj.can_be_anchored():
                 self.match(color_obj, t)
+                #print("anchored ", color_obj.color)
 
-    def save_data(self, dir="data"):
-        idx = self.file_name.find("tv")
-        name = self.file_name[idx: idx + 3] + ".csv"
+    def save_data(self, dir="data2"):
+        idx = self.file_name.find("n/")
+        name = self.file_name[idx + 2:idx + 5] + ".csv"
 
         print("Saving data to: " + name + "\n")
 
@@ -159,11 +200,39 @@ class AnchorManager:
 
         df.to_csv(os.path.join(dir, name), index=False)
 
-    def get_accuracy(self):
-        total_correct_class = 0
+    def recall(self, scores):
+        return scores["TP"] / (scores["TP"] + scores["FN"])
 
-        for color in self.color_switch.values():
-            total_correct_class += color[1]
+    def precision(self, scores):
+        return scores["TP"] / (scores["TP"] + scores["FP"])
 
-        accuracy = total_correct_class / self.total_switches
-        return accuracy
+    def accuracy(self, scores):
+        return (scores["TP"] + scores["TN"]) / (scores["TP"] + scores["TN"] + scores["FP"] + scores["FN"])
+
+    def f1_score(self, score):
+        recall = self.recall(score)
+        precision = self.precision(score)
+        return (2 * precision * recall) / (precision + recall)
+
+    def get_f1_score(self):
+        scores = self.scores.values()
+        scores_len = len(scores)
+
+        recall = 0
+        precision = 0
+        accuracy = 0
+        f1_score = 0
+
+        for color, score in self.scores.items():
+            recall += self.recall(score)
+            precision += self.precision(score)
+            accuracy += self.accuracy(score)
+            f1_score += self.f1_score(score)
+            print(color, " -> ", score)
+
+        recall /= scores_len
+        precision /= scores_len
+        accuracy /= scores_len
+        f1_score /= scores_len
+
+        return [recall, precision, accuracy, f1_score]
